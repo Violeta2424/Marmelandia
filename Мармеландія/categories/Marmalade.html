@@ -64,18 +64,12 @@
 
         <!-- Фільтри -->
         <div class="filter-box">
-            <button class="filter-btn">Фільтри</button>
+            <button class="filter-btn">Фільтр за ціною</button>
             <div class="filter-dropdown">
                 <div class="filter-group">
                     <h4>Ціна</h4>
                     <input type="range" id="price-range" min="0" max="1000" step="10">
                     <span id="price-value">0-1000 грн</span>
-                </div>
-                <div class="filter-group">
-                    <h4>Категорії</h4>
-                    <label><input type="checkbox" value="sweet"> Солодкі</label>
-                    <label><input type="checkbox" value="sour"> Кислі</label>
-                    <label><input type="checkbox" value="vegan"> Веганські</label>
                 </div>
             </div>
         </div>
@@ -83,7 +77,7 @@
         </section>
         <section class="catalog-list">
             <div class="catalog-items" id="category-items">
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="98">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                     <img src="../image/ведмедики.jpeg" alt="Bears from the rainbow forest">
                     <h3>Ведмедики з веселкового лісу</h3>
@@ -91,7 +85,7 @@
                     <p class="description">Мармелад «Ведмедики з веселкового лісу» — це чарівна колекція желейних ведмедиків з яскравими фруктовими смаками: яблуко, полуниця, малина, апельсин, лимон і ананас. </p>
                     <button class="add-to-cart">В кошик</button>
                 </div>
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="105">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                     <img src="../image/акули-мармелад.jpeg" alt="Sharks from the Fruit Ocean">
                     <h3>Акули з фруктового океану</h3>
@@ -99,7 +93,7 @@
                     <p class="description">Мармелад «Акули з фруктового океану» – смачні пригоди починаються! </p>
                     <button class="add-to-cart">В кошик</button>
                 </div>
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="115">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                 <img src="../image/жаби.jpeg" alt="Giant frog from a fairy pond">
                     <h3>Гігантська жабка з казкового ставка</h3>
@@ -108,7 +102,7 @@
                     <button class="add-to-cart">В кошик</button>
                 </div>
             
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="150">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                     <img src="../image/полуниця.jpeg" alt="Creamy strawberries with filling">
                     <h3>Вершкова полуниця з начинкою</h3>
@@ -116,7 +110,7 @@
                     <p class="description">Ніжний жувальний мармелад у формі соковитої полуниці на вершковій подушці з солодким желейним джемом всередині. </p>
                     <button class="add-to-cart">В кошик</button>
                 </div>
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="110">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                     <img src="../image/змії.jpg" alt="Meter-long snakes">
                     <h3>Змії метрові</h3>
@@ -124,7 +118,7 @@
                     <p class="description">Мармелад "Змії метрові" — це жувальний мармелад у формі довжелезних змій, що поєднує кілька смачних фруктових смаків в одній мармеладці.</p>
                     <button class="add-to-cart">В кошик</button>
                 </div>
-                <div class="catalog-item">
+                <div class="catalog-item" data-price="100">
                     <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
                     <img src="../image/Cherry-вишенька-головна.jpg" alt="Cherries from Grandma's garden">
                     <h3>Вишеньки з бабусиного саду</h3>

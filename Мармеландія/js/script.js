@@ -46,6 +46,64 @@ $(document).ready(function () {
   }
 
   // ===== 5. Фільтри та сортування =====
+  let originalProducts = []; // Зберігаємо оригінальний список товарів
+
+  // Ініціалізація при завантаженні сторінки
+  function initializeProducts() {
+    const $items = $('.catalog-items');
+    originalProducts = $items.children('.catalog-item').get().map(item => ({
+      element: item,
+      name: $(item).find('h3').text(),
+      price: parseInt($(item).data('price')) || 0,
+      description: $(item).find('.description').text()
+    }));
+  }
+
+  // Функція фільтрації та сортування
+  function filterAndSortProducts() {
+    const searchText = $('#search-input').val().toLowerCase().trim();
+    const sortValue = $('#sort-select').val();
+    const maxPrice = parseInt($('#price-range').val()) || 1000;
+
+    // Фільтруємо товари
+    let filteredProducts = originalProducts.filter(product => {
+      const matchesSearch = searchText === '' || 
+        product.name.toLowerCase().includes(searchText) || 
+        product.description.toLowerCase().includes(searchText);
+      const matchesPrice = product.price <= maxPrice;
+      return matchesSearch && matchesPrice;
+    });
+
+    // Сортуємо товари
+    filteredProducts.sort((a, b) => {
+      switch(sortValue) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name, 'uk');
+        case 'name-desc':
+          return b.name.localeCompare(a.name, 'uk');
+        case 'price-asc':
+          return a.price - b.price;
+        case 'price-desc':
+          return b.price - a.price;
+        default:
+          return 0;
+      }
+    });
+
+    // Оновлюємо відображення
+    const $items = $('.catalog-items');
+    $items.empty();
+
+    if (filteredProducts.length === 0) {
+      $items.html('<div class="no-results" style="text-align:center;padding:20px;color:#666;">Товарів не знайдено</div>');
+    } else {
+      filteredProducts.forEach(product => {
+        $items.append(product.element);
+      });
+    }
+  }
+
+  // Обробники подій
   $('.filter-btn').click(function (e) {
     e.stopPropagation();
     $('.filter-dropdown').toggleClass('active');
@@ -57,42 +115,45 @@ $(document).ready(function () {
     }
   });
 
+  // Оновлення відображення ціни при зміні слайдера
   $('#price-range').on('input', function () {
-    $('#price-value').text(`0-${this.value} грн`);
+    const value = $(this).val();
+    $('#price-value').text(`0-${value} грн`);
+    filterAndSortProducts();
   });
 
-  function filterProducts() {
-    const searchText = $('#search-input').val().toLowerCase();
-    const sortValue = $('#sort-select').val();
-    const maxPrice = $('#price-range').val();
-    const selectedCategories = $('input[type="checkbox"]:checked').map(function () {
-      return this.value;
-    }).get();
+  // Обробники подій для пошуку та сортування
+  $('#search-input').on('input', function() {
+    filterAndSortProducts();
+  });
 
-    $('.catalog-item').each(function () {
-      const $item = $(this);
-      const name = $item.text().toLowerCase();
-      const price = parseInt($item.data('price'));
-      const category = $item.data('category');
-      const matches = name.includes(searchText) && price <= maxPrice && 
-                      (selectedCategories.length === 0 || selectedCategories.includes(category));
-      $item.toggle(matches);
-    });
+  $('#sort-select').on('change', function() {
+    filterAndSortProducts();
+  });
 
-    const $items = $('.catalog-items');
-    const $products = $items.children('.catalog-item').get();
-    $products.sort(function (a, b) {
-      const $a = $(a);
-      const $b = $(b);
-      if (sortValue === 'name-asc') return $a.text().localeCompare($b.text());
-      if (sortValue === 'name-desc') return $b.text().localeCompare($a.text());
-      if (sortValue === 'price-asc') return $a.data('price') - $b.data('price');
-      if (sortValue === 'price-desc') return $b.data('price') - $a.data('price');
-    });
-    $items.append($products);
+  // Ініціалізація при завантаженні сторінки
+  $(document).ready(function() {
+    initializeProducts();
+    filterAndSortProducts();
+  });
+
+  // Скидання фільтрів
+  function resetFilters() {
+    $('#search-input').val('');
+    $('#price-range').val(1000);
+    $('#price-value').text('0-1000 грн');
+    $('#sort-select').val('name-asc');
+    filterAndSortProducts();
   }
 
-  $('#search-input, #sort-select, #price-range, .filter-group input[type="checkbox"]').on('input change', filterProducts);
+  // Додаємо кнопку скидання фільтрів
+  if ($('.filter-box').find('.reset-filters').length === 0) {
+    $('.filter-box').append('<button class="reset-filters" style="margin-top:10px;padding:8px 16px;background:#ff4fa3;color:white;border:none;border-radius:8px;cursor:pointer;">Скинути фільтри</button>');
+  }
+
+  $('.reset-filters').on('click', function() {
+    resetFilters();
+  });
 
   // ===== 7. Табуляція =====
   $('.tab-btn').click(function () {
