@@ -1,0 +1,46 @@
+/* ==================== Блок "Доставка" ==================== */
+.section-title {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: rgb(255, 0, 144);
+}
+
+.section-title .sub-title {
+  font-size: 1.5rem;
+  display: block;
+  color: #6c757d;
+}
+
+.info-block {
+  background: #fff5fb;
+  border-left: 4px solid #d63384;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ==================== Анімації ==================== */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-in {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: all 0.8s ease-out;
+}
+
+.slide-in.visible {
+  opacity: 1;
+  transform: translateX(0);
+}

@@ -1,0 +1,116 @@
+
+/* Стилі для форм авторизації */
+.auth-section {
+    min-height: 100vh;
+    padding: 40px 20px;
+    background: linear-gradient(120deg, #fff5fb 0%, #f7e6f2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-container {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(255,0,144,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-toggle {
+    display: flex;
+    margin-bottom: 20px;
+    background: #ffd6ef;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.toggle-btn.active {
+    background: rgb(255,0,144);
+    color: white;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.auth-form h2 {
+    color: rgb(255,0,144);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.password-input {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666;
+}
+
+.password-hint {
+    display: block;
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgb(255,0,144);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: transform 0.3s;
+}
+
+.auth-btn:hover {
+    transform: translateY(-2px);
+}
+
+.forgot-password {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: rgb(255,0,144);
+    text-decoration: none;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox input {
+    width: auto;
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 20px;
+    }
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Про нас | Marmelandia</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/about.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/script.js" defer></script>
+        <script src="../js/auth.js"></script>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="gummybears-bg"></div>
+    <header class="header">
+        <div class="container-header">
+            <a href="../index.html" class="logo">Marmelandia</a>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="../index.html">Головна</a></li>
+                    <li><a href="catalog.html">Каталог</a></li>
+                    <li><a href="about.html" class="active">Про нас</a></li>
+                    <li><a href="delivery.html">Доставка</a></li>
+                    <li><a href="#contacts">Контакти</a></li>
+                    <li><a href="account.html">Кабінет</a></li>
+                                       <li id="authButton"><a href="pages/login.html" class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Увійти</a></li>
+                </ul>
+                <div class="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </nav>
+            <div class="cart-icon" id="cartIcon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="about-hero fade-in">
+            <h1 class="section-title">Про Мармеландію</h1>
+            <div class="about-content">
+                <div class="story-block" data-aos="fade-right">
+                    <h2>Чарівна історія</h2>
+                    <p>У далекій-далекій країні, де веселка ніколи не зникає з неба, живе чарівна нація ласунів. Їхня столиця — Мармеландія, місто, де кожна вулиця пахне фруктами, а будиночки збудовані з зефіру, карамелі та шоколаду. Саме з цього казкового місця ми привозимо вам найкращі солодощі, щоби дарувати радість у кожному дні.</p>
+                </div>
+
+                <div class="story-block" data-aos="fade-left" data-aos-delay="200">
+                    <h2>Більше ніж магазин</h2>
+                    <p>Мармеландія — це більше, ніж просто інтернет-магазин. Це маленька країна щастя, де мешкають мармеладні ведмедики, маршмелоу-коти, шоколадні лицарі й багато інших героїв. І кожен з них мріє потрапити до вас у гості, щоб підсолодити настрій.</p>
+                </div>
+
+                <div class="story-block" data-aos="fade-right" data-aos-delay="400">
+                    <h2>Наші смаколики</h2>
+                    <p>Ми зібрали тут найсмачніші цукерки, мармелад, зефір, драже, шоколад та інші смаколики — для дітей, дорослих, свят, подарунків і просто, щоби побалувати себе.</p>
+                </div>
+
+                <div class="story-block" data-aos="fade-left" data-aos-delay="600">
+                    <h2>Наша місія</h2>
+                    <p>Наша місія — дарувати чарівні моменти солодкого щастя. Ми обираємо лише якісні продукти, дбаємо про свіжість, безпеку й естетику кожної упаковки.</p>
+                </div>
+
+                <div class="story-block highlight-block" data-aos="zoom-in" data-aos-delay="800">
+                    <p>Ласкаво просимо до Мармеландії — країни, де кожна цукерка має свою історію</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container-footer">
+            <div class="contact-info" id="contacts">
+                <h3>Контакти</h3>
+                <p>Телефон: +380669733852</p>
+                <p>Email: <a href="mailto:marmelandia.order@gmail.com">marmelandia.order@gmail.com</a></p>
+                <p>Адреса: м. Київ, вул. Продуктова 10</p>
+                <p><a href="developer.html">Розробник</a></p>
+            </div>
+        </div>
+        <p>© 2025 Мармеландія</p>
+    </footer>
+
+    <!-- Popup-кошик -->
+    <div class="cart-popup" id="cartPopup" style="display: none;">
+      <div class="popup-content cart-content">
+        <button class="close-btn" id="closeCart">&times;</button>
+        <h2>Ваш кошик</h2>
+        <div id="cartItems"></div>
+        <div class="cart-total">
+          <span>Сума: </span><span id="cartTotal">0 грн</span>
+        </div>
+        <button class="submit-btn" id="checkoutBtn">Оформити замовлення</button>
+      </div>
+    </div>
+</body>
+</html>

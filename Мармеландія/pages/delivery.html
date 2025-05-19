@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Доставка - Marmelandia</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/delivery.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/script.js" defer></script>
+    <script src="../js/auth.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+        <div class="gummybears-bg"></div>
+    <header class="header">
+        <div class="container-header">
+            <a href="../index.html" class="logo">Marmelandia</a>
+            <nav class="nav">
+                <ul class="nav-links">
+                    <li><a href="../index.html">Головна</a></li>
+                    <li><a href="catalog.html">Каталог</a></li>
+                    <li><a href="about.html">Про нас</a></li>
+                    <li><a href="delivery.html" class="active">Доставка</a></li>
+                    <li><a href="#contacts">Контакти</a></li>
+                    <li><a href="account.html">Кабінет</a></li>
+                                       <li id="authButton"><a href="pages/login.html" class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Увійти</a></li>
+                </ul>
+                <div class="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+            </nav>
+            <div class="cart-icon" id="cartIcon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+ <main>
+        <section class="fade-in slide-in-right">
+            <h1 class="section-title">Доставка <span class="sub-title">Швидко, зручно, по всій Україні!</span></h1>
+            <div class="info-block">
+                <h2>Варіанти доставки</h2>
+                <ul>
+                    <li>🚚 Нова Пошта — 1-2 дні, по всій Україні</li>
+                    <li>🏪 Самовивіз з магазину у Києві</li>
+                    <li>🛵 Кур'єр по Києву — в день замовлення</li>
+                </ul>
+            </div>
+            <div class="info-block">
+                <h2>Вартість доставки</h2>
+                <ul>
+                    <li>Безкоштовно — при замовленні від 1000 грн</li>
+                    <li>За тарифами перевізника — для інших замовлень</li>
+                </ul>
+            </div>
+            <div class="info-block">
+                <h2>Оплата</h2>
+                <ul>
+                    <li>Онлайн-оплата карткою</li>
+                    <li>Готівкою при отриманні</li>
+                    <li>Apple Pay / Google Pay</li>
+                </ul>
+            </div>
+            <div class="info-block">
+                <h2>Відстеження замовлення</h2>
+                <p>Після відправки ви отримаєте SMS з номером ТТН для відстеження посилки.</p>
+            </div>
+        </section>
+        </main>
+    <footer class="footer">
+        <div class="container-footer">
+            <div class="contact-info" id="contacts">
+                <h3>Контакти</h3>
+                <p>Телефон: +380669733852</p>
+                <p>Email: <a href="mailto:marmelandia.order@gmail.com">marmelandia.order@gmail.com</a></p>
+                <p>Адреса: м. Київ, вул. Продуктова 10</p>
+                <p><a href="developer.html">Розробник</a></p>
+            </div>
+        </div>
+                <p>© 2025 Мармеландія</p>
+    </footer>
+    <!-- Popup-кошик -->
+    <div class="cart-popup" id="cartPopup" style="display: none;">
+        <div class="popup-content cart-content">
+          <button class="close-btn" id="closeCart">&times;</button>
+          <h2>Ваш кошик</h2>
+          <div id="cartItems"></div>
+          <div class="cart-total">
+            <span>Сума: </span><span id="cartTotal">0 грн</span>
+          </div>
+          <button class="submit-btn" id="checkoutBtn">Оформити замовлення</button>
+        </div>
+      </div>
+</body>
+</html>
