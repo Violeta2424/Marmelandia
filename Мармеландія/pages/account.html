@@ -71,20 +71,24 @@
                         </div>
                         <div class="profile-details">
                             <div class="form-group">
-                                <label>Ім'я</label>
-                                <input type="text" value="Іван Солодкоїжка" class="profile-input">
+                                <label>ПІБ</label>
+                                <input type="text" class="profile-input" id="profileName">
+                                <span class="error-message"></span>
                             </div>
                             <div class="form-group">
                                 <label>Email</label>
-                                <input type="email" value="ivan@example.com" class="profile-input">
+                                <input type="text" class="profile-input" id="profileEmail">
+                                <span class="error-message"></span>
                             </div>
                             <div class="form-group">
                                 <label>Телефон</label>
-                                <input type="tel" value="+380991234567" class="profile-input">
+                                <input type="text" class="profile-input" id="profilePhone" placeholder="+380XXXXXXXXX">
+                                <span class="error-message"></span>
                             </div>
                             <div class="form-group">
                                 <label>Адреса доставки</label>
-                                <textarea class="profile-input">вул. Цукеркова 123, кв. 45</textarea>
+                                <textarea class="profile-input" id="profileAddress" placeholder="Наприклад: вул. Шевченка, 15-А, кв. 21, м. Київ"></textarea>
+                                <span class="error-message"></span>
                             </div>
                             <button class="save-profile-btn">Зберегти зміни</button>
                         </div>

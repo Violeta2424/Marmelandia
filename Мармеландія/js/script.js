@@ -120,9 +120,174 @@ $(document).ready(function () {
   });
 
   // ===== 9. Валідація контактної форми =====
-  // Form submission
+  // Add input hints
+  $('#name').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: Петренко Марія Іванівна');
+  }).on('blur', function() {
+    $(this).attr('placeholder', '');
+  });
+
+  $('#email').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: maria@ukr.net');
+  }).on('blur', function() {
+    $(this).attr('placeholder', '');
+  });
+
+  $('#message').on('focus', function() {
+    $(this).attr('placeholder', 'Опишіть ваше питання або пропозицію...');
+  }).on('blur', function() {
+    $(this).attr('placeholder', '');
+  });
+
+  function validateForm() {
+    let isValid = true;
+    $('.error-message').text('');
+    $('.form-group').removeClass('error');
+
+    // PIB validation
+    const pib = $('#name').val().trim();
+    const pibParts = pib.split(/\s+/).filter(part => part.length > 0);
+    
+    // Russian letters pattern
+    const russianLetters = /[ёъыэ]/i;
+    
+    // Check for repeated characters
+    const repeatedChars = /(.)\1{4,}/;
+    
+    if (!pib) {
+      showError('#name', 'Будь ласка, введіть ПІБ');
+      isValid = false;
+    } else if (russianLetters.test(pib)) {
+      showError('#name', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
+      isValid = false;
+    } else if (repeatedChars.test(pib)) {
+      showError('#name', 'ПІБ не може містити більше 4 однакових символів підряд');
+      isValid = false;
+    } else if (pibParts.length < 3) {
+      showError('#name', 'Будь ласка, введіть повне ПІБ (прізвище, ім\'я, по батькові) щонайменше по 2 символи кожне.');
+      isValid = false;
+    } else if (pibParts.some(part => part.length < 2)) {
+      showError('#name', 'Кожна частина ПІБ має містити щонайменше 2 символи');
+      isValid = false;
+    } else if (!/^[а-яА-ЯҐґЄєІіЇї\s']+$/.test(pib)) {
+      showError('#name', 'ПІБ не може містити цифри або спеціальні символи');
+      isValid = false;
+    }
+
+    // Email validation
+    const email = $('#email').val().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const tempEmailDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'yopmail.com'];
+    
+    // Check for spam-like patterns
+    const spamPatterns = [
+      /casino/i,
+      /viagra/i,
+      /porn/i,
+      /xxx/i,
+      /sex/i,
+      /drugs/i,
+      /lottery/i,
+      /winner/i,
+      /free.*money/i,
+      /earn.*fast/i
+    ];
+    
+    if (!email) {
+      showError('#email', 'Введіть email-адресу');
+      isValid = false;
+    } else if (russianLetters.test(email)) {
+      showError('#email', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
+      isValid = false;
+    } else if (spamPatterns.some(pattern => pattern.test(email))) {
+      showError('#email', 'Виявлено підозрілі символи в email-адресі');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      showError('#email', 'Email повинен містити символ @ і не починатися з нього');
+      isValid = false;
+    } else if (email.length < 6) {
+      showError('#email', 'Email має містити щонайменше 6 символів');
+      isValid = false;
+    } else if ((email.match(/@/g) || []).length > 1) {
+      showError('#email', 'Email не може містити більше одного символу @');
+      isValid = false;
+    } else if (/\.ru$/i.test(email)) {
+      showError('#email', 'Email з доменом .ru не дозволено');
+      isValid = false;
+    } else if (tempEmailDomains.some(domain => email.toLowerCase().endsWith(domain))) {
+      showError('#email', 'Використання тимчасових email-адрес заборонено');
+      isValid = false;
+    }
+
+    // Message validation
+    const message = $('#message').val().trim();
+    const messageWithoutSpaces = message.replace(/\s+/g, '');
+    
+    // Check for URLs
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const foundUrls = message.match(urlPattern);
+    
+    // Check for spam words
+    const spamWords = [
+      'купити', 'продати', 'заробіток', 'бізнес',
+      'кредит', 'позика', 'інвестиції', 'казино',
+      'ставки', 'лотерея', 'виграш', 'приз'
+    ];
+    
+    if (!message) {
+      showError('#message', 'Введіть повідомлення');
+      isValid = false;
+    } else if (russianLetters.test(message)) {
+      showError('#message', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
+      isValid = false;
+    } else if (messageWithoutSpaces.length === 0) {
+      showError('#message', 'Повідомлення не може складатися лише з пробілів');
+      isValid = false;
+    } else if (message.length < 10) {
+      showError('#message', 'Повідомлення має містити щонайменше 10 символів');
+      isValid = false;
+    } else if (message.length > 1000) {
+      showError('#message', 'Повідомлення не може перевищувати 1000 символів');
+      isValid = false;
+    } else if (!/\S/.test(message)) {
+      showError('#message', 'Повідомлення має містити хоча б одне слово');
+      isValid = false;
+    } else if (foundUrls && foundUrls.length > 0) {
+      showError('#message', 'Посилання в повідомленні заборонені');
+      isValid = false;
+    } else if (spamWords.some(word => message.toLowerCase().includes(word))) {
+      showError('#message', 'Повідомлення містить заборонені слова');
+      isValid = false;
+    } else if (repeatedChars.test(message)) {
+      showError('#message', 'Повідомлення містить забагато повторюваних символів');
+      isValid = false;
+    }
+
+    // XSS protection
+    if (isValid) {
+      const sanitizedPib = pib.replace(/[<>]/g, '');
+      const sanitizedEmail = email.replace(/[<>]/g, '');
+      const sanitizedMessage = message.replace(/[<>]/g, '');
+      
+      if (sanitizedPib !== pib || sanitizedEmail !== email || sanitizedMessage !== message) {
+        showError('#message', 'Повідомлення містить заборонені символи');
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  // Prevent form resubmission
+  let lastFormData = '';
   $('#contactForm').on('submit', function(e) {
     e.preventDefault();
+    
+    const currentFormData = $(this).serialize();
+    if (currentFormData === lastFormData) {
+      showError('#message', 'Ця форма вже була відправлена. Будь ласка, внесіть зміни перед повторною відправкою.');
+      return;
+    }
     
     if (validateForm()) {
       const name = $('#name').val().trim();
@@ -131,6 +296,9 @@ $(document).ready(function () {
 
       // Send email
       window.location.href = `mailto:marmelandia.order@gmail.com?subject=Повідомлення від ${name}&body=${encodeURIComponent(message)}`;
+      
+      // Save form data to prevent resubmission
+      lastFormData = currentFormData;
       
       // Reset form and close modal
       this.reset();
@@ -145,39 +313,6 @@ $(document).ready(function () {
       });
     }
   });
-
-  function validateForm() {
-    let isValid = true;
-    $('.error-message').text('');
-    $('.form-group').removeClass('error');
-
-    // Name validation
-    const name = $('#name').val().trim();
-    if (!name || name.length < 2 || !/^[a-zA-ZА-ЯҐЄІЇа-яґєії\s']+$/.test(name)) {
-      showError('#name', 'Введіть коректне ім\'я');
-      isValid = false;
-    }
-
-    // Email validation
-    const email = $('#email').val().trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showError('#email', 'Введіть коректний email');
-      isValid = false;
-    }
-    if (/\.ru$/i.test(email)) {
-      showError('#email', 'Email з доменом .ru не дозволено');
-      isValid = false;
-    }
-
-    // Message validation
-    const message = $('#message').val().trim();
-    if (!message || message.length < 10) {
-      showError('#message', 'Повідомлення має містити мінімум 10 символів');
-      isValid = false;
-    }
-
-    return isValid;
-  }
 
   function showError(field, message) {
     $(field).closest('.form-group').addClass('error')
@@ -413,86 +548,393 @@ $(document).ready(function () {
     $('#cartPopup .cart-content').append(`
       <form class="order-form" id="orderForm" style="display:none;margin-top:18px;">
         <h3 style="margin-bottom:10px;color:#ff4fa3;">Оформлення замовлення</h3>
-        <input type="text" name="orderName" id="orderName" placeholder="Ваше ім'я*" required style="margin-bottom:8px;width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #ffd6ef;">
-        <input type="email" name="orderEmail" id="orderEmail" placeholder="Email*" required style="margin-bottom:8px;width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #ffd6ef;">
-        <input type="tel" name="orderPhone" id="orderPhone" placeholder="Телефон*" required style="margin-bottom:8px;width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #ffd6ef;">
-        <textarea name="orderComment" id="orderComment" placeholder="Коментар до замовлення" style="margin-bottom:8px;width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #ffd6ef;"></textarea>
+        <div class="form-group">
+          <input type="text" name="orderName" id="orderName" placeholder="ПІБ*" class="order-input">
+          <span class="error-message"></span>
+        </div>
+        <div class="form-group">
+          <input type="text" name="orderEmail" id="orderEmail" placeholder="Email*" class="order-input">
+          <span class="error-message"></span>
+        </div>
+        <div class="form-group">
+          <input type="text" name="orderPhone" id="orderPhone" placeholder="Телефон* (+380XXXXXXXXX)" class="order-input">
+          <span class="error-message"></span>
+        </div>
+        <div class="form-group">
+          <textarea name="orderComment" id="orderComment" placeholder="Коментар до замовлення" class="order-input"></textarea>
+          <span class="error-message"></span>
+        </div>
         <button type="submit" class="submit-btn" style="width:100%;margin-top:8px;">Підтвердити замовлення</button>
         <div class="order-success" style="display:none;color:green;margin-top:10px;text-align:center;"></div>
       </form>
     `);
   }
+
   // Показати форму при натисканні на "Оформити замовлення"
   $('#checkoutBtn').off('click').on('click', function() {
     $('#orderForm').slideDown(200);
   });
-  // Валідація та "відправка" замовлення
+
+  // Add input hints
+  $('#orderName').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: Петренко Марія Іванівна');
+  }).on('blur', function() {
+    $(this).attr('placeholder', 'ПІБ*');
+  });
+
+  $('#orderEmail').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: maria@ukr.net');
+  }).on('blur', function() {
+    $(this).attr('placeholder', 'Email*');
+  });
+
+  $('#orderComment').on('focus', function() {
+    $(this).attr('placeholder', 'Опишіть ваше замовлення або додаткові побажання...');
+  }).on('blur', function() {
+    $(this).attr('placeholder', 'Коментар до замовлення');
+  });
+
+  function validateOrderForm() {
+    let isValid = true;
+    $('.error-message').text('');
+    $('.form-group').removeClass('error');
+
+    // PIB validation
+    const pib = $('#orderName').val().trim();
+    const pibParts = pib.split(/\s+/).filter(part => part.length > 0);
+    
+    // Russian letters pattern
+    const russianLetters = /[ёъыэ]/i;
+    
+    // Check for repeated characters
+    const repeatedChars = /(.)\1{4,}/;
+    
+    if (!pib) {
+      showError('#orderName', 'Будь ласка, введіть ПІБ');
+      isValid = false;
+    } else if (russianLetters.test(pib)) {
+      showError('#orderName', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
+      isValid = false;
+    } else if (repeatedChars.test(pib)) {
+      showError('#orderName', 'ПІБ не може містити більше 4 однакових символів підряд');
+      isValid = false;
+    } else if (pibParts.length < 3) {
+      showError('#orderName', 'Будь ласка, введіть повне ПІБ (прізвище, ім\'я, по батькові) щонайменше по 2 символи кожне.');
+      isValid = false;
+    } else if (pibParts.some(part => part.length < 2)) {
+      showError('#orderName', 'Кожна частина ПІБ має містити щонайменше 2 символи');
+      isValid = false;
+    } else if (!/^[а-яА-ЯҐґЄєІіЇї\s']+$/.test(pib)) {
+      showError('#orderName', 'ПІБ не може містити цифри або спеціальні символи');
+      isValid = false;
+    }
+
+    // Email validation
+    const email = $('#orderEmail').val().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const tempEmailDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'yopmail.com'];
+    
+    if (!email) {
+      showError('#orderEmail', 'Введіть email-адресу');
+      isValid = false;
+    } else if (russianLetters.test(email)) {
+      showError('#orderEmail', 'Використання російських літер заборонено');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      showError('#orderEmail', 'Email повинен містити символ @ і не починатися з нього');
+      isValid = false;
+    } else if (email.length < 6) {
+      showError('#orderEmail', 'Email має містити щонайменше 6 символів');
+      isValid = false;
+    } else if ((email.match(/@/g) || []).length > 1) {
+      showError('#orderEmail', 'Email не може містити більше одного символу @');
+      isValid = false;
+    } else if (/\.ru$/i.test(email)) {
+      showError('#orderEmail', 'Email з доменом .ru не дозволено');
+      isValid = false;
+    } else if (tempEmailDomains.some(domain => email.toLowerCase().endsWith(domain))) {
+      showError('#orderEmail', 'Використання тимчасових email-адрес заборонено');
+      isValid = false;
+    }
+
+    // Phone validation
+    const phone = $('#orderPhone').val().trim();
+    const phoneRegex = /^\+380\d{9}$/;
+    
+    if (!phone) {
+      showError('#orderPhone', 'Введіть номер телефону');
+      isValid = false;
+    } else if (!phoneRegex.test(phone)) {
+      showError('#orderPhone', 'Введіть номер у форматі +380XXXXXXXXX');
+      isValid = false;
+    }
+
+    // Comment validation
+    const comment = $('#orderComment').val().trim();
+    const commentWithoutSpaces = comment.replace(/\s+/g, '');
+    
+    if (comment && commentWithoutSpaces.length === 0) {
+      showError('#orderComment', 'Повідомлення не може складатися лише з пробілів');
+      isValid = false;
+    } else if (comment && comment.length < 10) {
+      showError('#orderComment', 'Повідомлення має містити щонайменше 10 символів');
+      isValid = false;
+    } else if (comment && comment.length > 1000) {
+      showError('#orderComment', 'Повідомлення не може перевищувати 1000 символів');
+      isValid = false;
+    }
+
+    // XSS protection
+    if (isValid) {
+      const sanitizedPib = pib.replace(/[<>]/g, '');
+      const sanitizedEmail = email.replace(/[<>]/g, '');
+      const sanitizedPhone = phone.replace(/[<>]/g, '');
+      const sanitizedComment = comment.replace(/[<>]/g, '');
+      
+      if (sanitizedPib !== pib || sanitizedEmail !== email || 
+          sanitizedPhone !== phone || sanitizedComment !== comment) {
+        showError('#orderComment', 'Форма містить заборонені символи');
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  // Prevent form resubmission
+  let lastOrderData = '';
   $(document).on('submit', '#orderForm', function(e) {
     e.preventDefault();
-    let name = $('#orderName').val().trim();
-    let email = $('#orderEmail').val().trim();
-    let phone = $('#orderPhone').val().trim();
-    if (!name || name.length < 2) { alert('Введіть ім\'я'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Введіть коректний email'); return; }
-    if (/\.ru$/i.test(email)) { alert('Email з доменом .ru не дозволено'); return; }
-    if (!/^[\d\+\-\s\(\)]{7,}$/.test(phone)) { alert('Введіть коректний телефон'); return; }
-    // Тут можна реалізувати реальну відправку (через бекенд або mailto)
-    // Для демо — просто повідомлення про успіх
-    // --- Зберігаємо замовлення в LocalStorage ---
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    let order = {
-      date: new Date().toLocaleString('uk-UA'),
-      items: cart,
-      total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-      name, email, phone,
+    
+    const currentFormData = {
+      name: $('#orderName').val().trim(),
+      email: $('#orderEmail').val().trim(),
+      phone: $('#orderPhone').val().trim(),
       comment: $('#orderComment').val().trim()
     };
-    orders.push(order);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    $('.order-success').text('Дякуємо! Ваше замовлення прийнято.').show();
-    setTimeout(function(){
-      $('#cartPopup').fadeOut(200).removeClass('active');
-      $('#orderForm')[0].reset();
-      $('.order-success').hide();
-      // Очищаємо кошик
-      localStorage.removeItem('cart');
-      renderCart();
-      updateCartCount();
-      $('#orderForm').slideUp(200);
-    }, 2000);
+    
+    const currentFormDataStr = JSON.stringify(currentFormData);
+    if (currentFormDataStr === lastOrderData) {
+      showError('#orderComment', 'Ця форма вже була відправлена. Будь ласка, внесіть зміни перед повторною відправкою.');
+      return;
+    }
+    
+    if (validateOrderForm()) {
+      // --- Зберігаємо замовлення в LocalStorage ---
+      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      let order = {
+        date: new Date().toLocaleString('uk-UA'),
+        items: cart,
+        total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+        ...currentFormData
+      };
+      orders.push(order);
+      localStorage.setItem('orders', JSON.stringify(orders));
+      lastOrderData = currentFormDataStr;
+      
+      $('.order-success').text('Дякуємо! Ваше замовлення прийнято.').show();
+      setTimeout(function(){
+        $('#cartPopup').fadeOut(200).removeClass('active');
+        $('#orderForm')[0].reset();
+        $('.order-success').hide();
+        // Очищаємо кошик
+        localStorage.removeItem('cart');
+        renderCart();
+        updateCartCount();
+        $('#orderForm').slideUp(200);
+      }, 2000);
+    }
+  });
+
+  // Clear errors on input
+  $('.order-input').on('input', function() {
+    $(this).closest('.form-group').removeClass('error')
+           .find('.error-message').text('');
   });
 
   // ===== Особистий кабінет: збереження профілю =====
   function loadProfile() {
     if (window.location.pathname.includes('account.html')) {
       const profile = JSON.parse(localStorage.getItem('profile') || '{}');
-      if (profile.name) $(".profile-details input[type='text']").val(profile.name);
-      if (profile.email) $(".profile-details input[type='email']").val(profile.email);
-      if (profile.phone) $(".profile-details input[type='tel']").val(profile.phone);
-      if (profile.address) $(".profile-details textarea").val(profile.address);
+      if (profile.name) $('#profileName').val(profile.name);
+      if (profile.email) $('#profileEmail').val(profile.email);
+      if (profile.phone) $('#profilePhone').val(profile.phone);
+      if (profile.address) $('#profileAddress').val(profile.address);
     }
   }
   loadProfile();
+
+  // Add input hints
+  $('#profileName').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: Петренко Марія Іванівна');
+  }).on('blur', function() {
+    $(this).attr('placeholder', '');
+  });
+
+  $('#profileEmail').on('focus', function() {
+    $(this).attr('placeholder', 'Наприклад: maria@ukr.net');
+  }).on('blur', function() {
+    $(this).attr('placeholder', '');
+  });
+
+  function validateProfileForm() {
+    let isValid = true;
+    $('.error-message').text('');
+    $('.form-group').removeClass('error');
+
+    // PIB validation
+    const pib = $('#profileName').val().trim();
+    const pibParts = pib.split(/\s+/).filter(part => part.length > 0);
+    
+    // Russian letters pattern
+    const russianLetters = /[ёъыэ]/i;
+    
+    // Check for repeated characters
+    const repeatedChars = /(.)\1{4,}/;
+    
+    if (!pib) {
+      showError('#profileName', 'Будь ласка, введіть ПІБ');
+      isValid = false;
+    } else if (russianLetters.test(pib)) {
+      showError('#profileName', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
+      isValid = false;
+    } else if (repeatedChars.test(pib)) {
+      showError('#profileName', 'ПІБ не може містити більше 4 однакових символів підряд');
+      isValid = false;
+    } else if (pibParts.length < 3) {
+      showError('#profileName', 'Будь ласка, введіть повне ПІБ (прізвище, ім\'я, по батькові) щонайменше по 2 символи кожне.');
+      isValid = false;
+    } else if (pibParts.some(part => part.length < 2)) {
+      showError('#profileName', 'Кожна частина ПІБ має містити щонайменше 2 символи');
+      isValid = false;
+    } else if (!/^[а-яА-ЯҐґЄєІіЇї\s']+$/.test(pib)) {
+      showError('#profileName', 'ПІБ не може містити цифри або спеціальні символи');
+      isValid = false;
+    }
+
+    // Email validation
+    const email = $('#profileEmail').val().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const tempEmailDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'yopmail.com'];
+    
+    if (!email) {
+      showError('#profileEmail', 'Введіть email-адресу');
+      isValid = false;
+    } else if (russianLetters.test(email)) {
+      showError('#profileEmail', 'Використання російських літер заборонено');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      showError('#profileEmail', 'Email повинен містити символ @ і не починатися з нього');
+      isValid = false;
+    } else if (email.length < 6) {
+      showError('#profileEmail', 'Email має містити щонайменше 6 символів');
+      isValid = false;
+    } else if ((email.match(/@/g) || []).length > 1) {
+      showError('#profileEmail', 'Email не може містити більше одного символу @');
+      isValid = false;
+    } else if (/\.ru$/i.test(email)) {
+      showError('#profileEmail', 'Email з доменом .ru не дозволено');
+      isValid = false;
+    } else if (tempEmailDomains.some(domain => email.toLowerCase().endsWith(domain))) {
+      showError('#profileEmail', 'Використання тимчасових email-адрес заборонено');
+      isValid = false;
+    }
+
+    // Phone validation
+    const phone = $('#profilePhone').val().trim();
+    const phoneRegex = /^\+380\d{9}$/;
+    
+    if (!phone) {
+      showError('#profilePhone', 'Введіть номер телефону');
+      isValid = false;
+    } else if (!phoneRegex.test(phone)) {
+      showError('#profilePhone', 'Введіть номер у форматі +380XXXXXXXXX');
+      isValid = false;
+    }
+
+    // Address validation
+    const address = $('#profileAddress').val().trim();
+    const addressWithoutSpaces = address.replace(/\s+/g, '');
+    const validAddressChars = /^[а-яА-ЯҐґЄєІіЇї0-9\s.,-]+$/;
+    const hasNumber = /\d/;
+    const hasMultipleCommas = /,\s*,/;
+    
+    if (!address) {
+      showError('#profileAddress', 'Введіть адресу доставки');
+      isValid = false;
+    } else if (addressWithoutSpaces.length === 0) {
+      showError('#profileAddress', 'Введіть адресу доставки, це поле не може бути порожнім');
+      isValid = false;
+    } else if (address.length < 10) {
+      showError('#profileAddress', 'Адреса має містити щонайменше 10 символів');
+      isValid = false;
+    } else if (address.length > 150) {
+      showError('#profileAddress', 'Адреса не може бути довшою за 150 символів');
+      isValid = false;
+    } else if (!validAddressChars.test(address)) {
+      showError('#profileAddress', 'Адреса містить недопустимі символи');
+      isValid = false;
+    } else if (!hasNumber.test(address)) {
+      showError('#profileAddress', 'Вкажіть номер будинку або квартири');
+      isValid = false;
+    } else if (hasMultipleCommas.test(address)) {
+      showError('#profileAddress', 'Адреса не може містити зайвих ком або пробілів');
+      isValid = false;
+    }
+
+    // XSS protection
+    if (isValid) {
+      const sanitizedPib = pib.replace(/[<>]/g, '');
+      const sanitizedEmail = email.replace(/[<>]/g, '');
+      const sanitizedPhone = phone.replace(/[<>]/g, '');
+      const sanitizedAddress = address.replace(/[<>]/g, '');
+      
+      if (sanitizedPib !== pib || sanitizedEmail !== email || 
+          sanitizedPhone !== phone || sanitizedAddress !== address) {
+        showError('#profileAddress', 'Форма містить заборонені символи');
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  // Prevent form resubmission
+  let lastProfileData = '';
   $(document).on('click', '.save-profile-btn', function(e) {
     e.preventDefault();
-    const name = $(".profile-details input[type='text']").val().trim();
-    const email = $(".profile-details input[type='email']").val().trim();
-    const phone = $(".profile-details input[type='tel']").val().trim();
-    const address = $(".profile-details textarea").val().trim();
-    if (!name || name.length < 2) { alert('Введіть коректне ім\'я'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Введіть коректний email'); return; }
-    if (/\.ru$/i.test(email)) { alert('Email з доменом .ru не дозволено'); return; }
-    // Український номер: +380XXXXXXXXX або 0XXXXXXXXX
-    const uaPhoneRegex = /^(\+380|0)\d{9}$/;
-    if (!uaPhoneRegex.test(phone)) { alert('Введіть коректний український номер телефону у форматі +380XXXXXXXXX або 0XXXXXXXXX'); return; }
-    localStorage.setItem('profile', JSON.stringify({ name, email, phone, address }));
-    if ($('.save-profile-btn').next('.profile-success').length === 0) {
-      $('.save-profile-btn').after('<div class="profile-success" style="color:green;margin-top:10px;">Зміни збережено!</div>');
-    } else {
-      $('.profile-success').text('Зміни збережено!').show();
+    
+    const currentFormData = {
+      name: $('#profileName').val().trim(),
+      email: $('#profileEmail').val().trim(),
+      phone: $('#profilePhone').val().trim(),
+      address: $('#profileAddress').val().trim()
+    };
+    
+    const currentFormDataStr = JSON.stringify(currentFormData);
+    if (currentFormDataStr === lastProfileData) {
+      showError('#profileAddress', 'Ця форма вже була збережена. Будь ласка, внесіть зміни перед повторним збереженням.');
+      return;
     }
-    setTimeout(function(){ $('.profile-success').fadeOut(400); }, 2000);
+    
+    if (validateProfileForm()) {
+      localStorage.setItem('profile', currentFormDataStr);
+      lastProfileData = currentFormDataStr;
+      
+      if ($('.save-profile-btn').next('.profile-success').length === 0) {
+        $('.save-profile-btn').after('<div class="profile-success" style="color:green;margin-top:10px;">Зміни збережено!</div>');
+      } else {
+        $('.profile-success').text('Зміни збережено!').show();
+      }
+      setTimeout(function(){ $('.profile-success').fadeOut(400); }, 2000);
+    }
+  });
+
+  // Clear errors on input
+  $('.profile-input').on('input', function() {
+    $(this).closest('.form-group').removeClass('error')
+           .find('.error-message').text('');
   });
 
   // ===== Особистий кабінет: зміна аватара =====
