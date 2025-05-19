@@ -1,0 +1,81 @@
+# robots.txt для сайту Мармеландія
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /pages/
+Allow: /categories/
+Allow: /css/
+Allow: /js/
+Allow: /image/
+Allow: /audio/
+Allow: /video/
+
+# Заборона для адміністративних сторінок
+Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
+Disallow: /node_modules/
+
+# Заборона для технічних файлів
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*.txt$
+Disallow: /*.log$
+Disallow: /*.sql$
+Disallow: /*.bak$
+Disallow: /*.old$
+Disallow: /*.tmp$
+Disallow: /*.ts$
+Disallow: /*.map$
+
+# Заборона для пошуку
+Disallow: /search/
+Disallow: /*?search=
+Disallow: /*?q=
+Disallow: /*?query=
+
+# Заборона для фільтрів
+Disallow: /*?filter=
+Disallow: /*?sort=
+Disallow: /*?price=
+Disallow: /*?category=
+
+# Заборона для пагінації
+Disallow: /*?page=
+Disallow: /*?p=
+
+# Заборона для кошика та замовлень
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order/
+
+# Заборона для особистого кабінету
+Disallow: /account/
+Disallow: /profile/
+Disallow: /login/
+Disallow: /register/
+
+# Спеціальні правила для різних пошукових систем
+User-agent: Googlebot
+Allow: /sitemap.xml
+Allow: /image/
+Allow: /css/
+Allow: /js/
+Allow: /audio/
+Allow: /video/
+Crawl-delay: 5
+
+User-agent: Yandexbot
+Allow: /sitemap.xml
+Allow: /image/
+Allow: /css/
+Allow: /js/
+Allow: /audio/
+Allow: /video/
+Crawl-delay: 5
+
+# Вказуємо розташування sitemap
+Sitemap: https://marmelandia.com/sitemap.xml
+
+# Налаштування затримки між запитами для інших ботів
+Crawl-delay: 10 
