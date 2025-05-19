@@ -530,26 +530,26 @@ $(document).ready(function () {
     addToCart({ title, price, img });
   });
   // Додаємо/оновлюємо товар у LocalStorage
-  function addToCart(product) {
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  async function addToCart(product) {
+    let cart = await db.getData('cart');
     const idx = cart.findIndex(item => item.title === product.title);
     if (idx > -1) {
       cart[idx].qty += 1;
     } else {
       cart.push({ ...product, qty: 1 });
     }
-    localStorage.setItem('cart', JSON.stringify(cart));
+    await db.saveData('cart', cart);
     updateCartCount();
   }
   // Оновлення лічильника
-  function updateCartCount() {
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  async function updateCartCount() {
+    let cart = await db.getData('cart');
     let count = cart.reduce((sum, item) => sum + item.qty, 0);
     $('#cartCount').text(count);
   }
   // Відображення кошика
-  function renderCart() {
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  async function renderCart() {
+    let cart = await db.getData('cart');
     let $cartItems = $('#cartItems');
     $cartItems.empty();
     let total = 0;
@@ -578,25 +578,25 @@ $(document).ready(function () {
     $('#cartTotal').text(total + ' грн');
   }
   // Кнопки + і - для зміни кількості
-  $(document).on('click', '.cart-qty-btn', function() {
+  $(document).on('click', '.cart-qty-btn', async function() {
     let idx = $(this).data('idx');
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    let cart = await db.getData('cart');
     if ($(this).hasClass('plus')) {
       cart[idx].qty += 1;
     } else if ($(this).hasClass('minus')) {
       cart[idx].qty -= 1;
       if (cart[idx].qty < 1) cart[idx].qty = 1;
     }
-    localStorage.setItem('cart', JSON.stringify(cart));
+    await db.saveData('cart', cart);
     renderCart();
     updateCartCount();
   });
   // Видалення товару з кошика
-  $(document).on('click', '.remove-cart-item', function() {
+  $(document).on('click', '.remove-cart-item', async function() {
     let idx = $(this).data('idx');
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    let cart = await db.getData('cart');
     cart.splice(idx, 1);
-    localStorage.setItem('cart', JSON.stringify(cart));
+    await db.saveData('cart', cart);
     renderCart();
     updateCartCount();
   });
@@ -743,6 +743,9 @@ $(document).ready(function () {
     } else if (comment && comment.length > 1000) {
       showError('#orderComment', 'Повідомлення не може перевищувати 1000 символів');
       isValid = false;
+    } else if (!/\S/.test(comment)) {
+      showError('#orderComment', 'Повідомлення має містити хоча б одне слово');
+      isValid = false;
     }
 
     // XSS protection
@@ -764,43 +767,34 @@ $(document).ready(function () {
 
   // Prevent form resubmission
   let lastOrderData = '';
-  $(document).on('submit', '#orderForm', function(e) {
+  $(document).on('submit', '#orderForm', async function(e) {
     e.preventDefault();
     
-    const currentFormData = {
-      name: $('#orderName').val().trim(),
-      email: $('#orderEmail').val().trim(),
-      phone: $('#orderPhone').val().trim(),
-      comment: $('#orderComment').val().trim()
-    };
-    
-    const currentFormDataStr = JSON.stringify(currentFormData);
-    if (currentFormDataStr === lastOrderData) {
-      showError('#orderComment', 'Ця форма вже була відправлена. Будь ласка, внесіть зміни перед повторною відправкою.');
-      return;
-    }
-    
     if (validateOrderForm()) {
-      // --- Зберігаємо замовлення в LocalStorage ---
-      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      let orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      let order = {
+      const cart = await db.getData('cart');
+      const order = {
         date: new Date().toLocaleString('uk-UA'),
         items: cart,
         total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-        ...currentFormData
+        name: $('#orderName').val().trim(),
+        email: $('#orderEmail').val().trim(),
+        phone: $('#orderPhone').val().trim(),
+        comment: $('#orderComment').val().trim()
       };
+
+      // Зберігаємо замовлення
+      const orders = await db.getData('orders');
       orders.push(order);
-      localStorage.setItem('orders', JSON.stringify(orders));
-      lastOrderData = currentFormDataStr;
+      await db.saveData('orders', orders);
+
+      // Очищаємо кошик
+      await db.clearStore('cart');
       
       $('.order-success').text('Дякуємо! Ваше замовлення прийнято.').show();
       setTimeout(function(){
         $('#cartPopup').fadeOut(200).removeClass('active');
         $('#orderForm')[0].reset();
         $('.order-success').hide();
-        // Очищаємо кошик
-        localStorage.removeItem('cart');
         renderCart();
         updateCartCount();
         $('#orderForm').slideUp(200);
@@ -815,13 +809,16 @@ $(document).ready(function () {
   });
 
   // ===== Особистий кабінет: збереження профілю =====
-  function loadProfile() {
+  async function loadProfile() {
     if (window.location.pathname.includes('account.html')) {
-      const profile = JSON.parse(localStorage.getItem('profile') || '{}');
-      if (profile.name) $('#profileName').val(profile.name);
-      if (profile.email) $('#profileEmail').val(profile.email);
-      if (profile.phone) $('#profilePhone').val(profile.phone);
-      if (profile.address) $('#profileAddress').val(profile.address);
+      const profile = await db.getData('profile');
+      if (profile && profile.length > 0) {
+        const userProfile = profile[0];
+        if (userProfile.name) $('#profileName').val(userProfile.name);
+        if (userProfile.email) $('#profileEmail').val(userProfile.email);
+        if (userProfile.phone) $('#profilePhone').val(userProfile.phone);
+        if (userProfile.address) $('#profileAddress').val(userProfile.address);
+      }
     }
   }
   loadProfile();
@@ -961,27 +958,20 @@ $(document).ready(function () {
     return isValid;
   }
 
-  // Prevent form resubmission
-  let lastProfileData = '';
-  $(document).on('click', '.save-profile-btn', function(e) {
+  // Збереження профілю
+  $(document).on('click', '.save-profile-btn', async function(e) {
     e.preventDefault();
     
     const currentFormData = {
+      id: 1, // Фіксований ID для профілю
       name: $('#profileName').val().trim(),
       email: $('#profileEmail').val().trim(),
       phone: $('#profilePhone').val().trim(),
       address: $('#profileAddress').val().trim()
     };
     
-    const currentFormDataStr = JSON.stringify(currentFormData);
-    if (currentFormDataStr === lastProfileData) {
-      showError('#profileAddress', 'Ця форма вже була збережена. Будь ласка, внесіть зміни перед повторним збереженням.');
-      return;
-    }
-    
     if (validateProfileForm()) {
-      localStorage.setItem('profile', currentFormDataStr);
-      lastProfileData = currentFormDataStr;
+      await db.saveData('profile', currentFormData);
       
       if ($('.save-profile-btn').next('.profile-success').length === 0) {
         $('.save-profile-btn').after('<div class="profile-success" style="color:green;margin-top:10px;">Зміни збережено!</div>');
@@ -1028,9 +1018,9 @@ $(document).ready(function () {
   }
 
   // ===== Особистий кабінет: показ замовлень =====
-  function renderOrders() {
+  async function renderOrders() {
     if (window.location.pathname.includes('account.html')) {
-      let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      let orders = await db.getData('orders');
       let $list = $('.orders-list');
       $list.empty();
       if (!orders.length) {
@@ -1063,23 +1053,35 @@ $(document).ready(function () {
       });
     }
   }
-  renderOrders();
+
+  // Обробник кнопки відміни замовлення
+  $(document).on('click', '.cancel-order-btn', async function() {
+    const idx = $(this).data('idx');
+    let orders = await db.getData('orders');
+    orders.splice(idx, 1);
+    await db.saveData('orders', orders);
+    renderOrders();
+    Swal && Swal.fire ? Swal.fire('Замовлення скасовано!', '', 'success') : alert('Замовлення скасовано!');
+  });
 
   // ===== Улюблене =====
-  function getFavorites() {
-    return JSON.parse(localStorage.getItem('favorites') || '[]');
+  async function getFavorites() {
+    return await db.getData('favorites');
   }
-  function setFavorites(favs) {
-    localStorage.setItem('favorites', JSON.stringify(favs));
+
+  async function setFavorites(favs) {
+    await db.clearStore('favorites');
+    await db.saveData('favorites', favs);
   }
+
   // Додаємо/видаляємо з улюбленого
-  $(document).on('click', '.favorite-btn', function(e) {
+  $(document).on('click', '.favorite-btn', async function(e) {
     e.preventDefault();
     const $item = $(this).closest('.catalog-item');
     const title = $item.find('h3').text();
     const price = parseInt($item.find('.price').text());
     const img = $item.find('img').attr('src');
-    const favs = getFavorites();
+    const favs = await getFavorites();
     const idx = favs.findIndex(f => f.title === title);
     if (idx > -1) {
       favs.splice(idx, 1);
@@ -1088,12 +1090,13 @@ $(document).ready(function () {
       favs.push({ title, price, img });
       $(this).addClass('active');
     }
-    setFavorites(favs);
+    await setFavorites(favs);
     renderFavorites();
   });
+
   // Підсвічування сердечка для улюбленого
-  function updateFavoriteBtns() {
-    const favs = getFavorites();
+  async function updateFavoriteBtns() {
+    const favs = await getFavorites();
     $('.catalog-item').each(function() {
       const title = $(this).find('h3').text();
       if (favs.find(f => f.title === title)) {
@@ -1103,10 +1106,11 @@ $(document).ready(function () {
       }
     });
   }
+
   // Відображення улюбленого у кабінеті
-  function renderFavorites() {
+  async function renderFavorites() {
     if (window.location.pathname.includes('account.html')) {
-      const favs = getFavorites();
+      const favs = await getFavorites();
       const $grid = $('.favorites-grid');
       $grid.empty();
       if (!favs.length) {
@@ -1127,27 +1131,20 @@ $(document).ready(function () {
       });
     }
   }
+
   // Видалення з улюбленого у кабінеті
-  $(document).on('click', '.remove-favorite-btn', function() {
+  $(document).on('click', '.remove-favorite-btn', async function() {
     const idx = $(this).data('idx');
-    const favs = getFavorites();
+    const favs = await getFavorites();
     favs.splice(idx, 1);
-    setFavorites(favs);
+    await setFavorites(favs);
     renderFavorites();
     updateFavoriteBtns();
   });
-  // Підсвічування сердечок при завантаженні
-  updateFavoriteBtns();
-  // Відображення улюбленого у кабінеті при завантаженні
-  renderFavorites();
 
-  // Обробник кнопки відміни замовлення
-  $(document).on('click', '.cancel-order-btn', function() {
-    const idx = $(this).data('idx');
-    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    orders.splice(idx, 1);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    renderOrders();
-    Swal && Swal.fire ? Swal.fire('Замовлення скасовано!', '', 'success') : alert('Замовлення скасовано!');
-  });
+  // Ініціалізація при завантаженні
+  updateCartCount();
+  updateFavoriteBtns();
+  renderFavorites();
+  renderOrders();
 });
