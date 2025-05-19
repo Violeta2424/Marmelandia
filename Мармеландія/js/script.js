@@ -521,7 +521,7 @@ $(document).ready(function () {
     }
   });
   // Додавання товару в кошик
-  $('.add-to-cart').on('click', function() {
+  $(document).on('click', '.add-to-cart', function() {
     const $item = $(this).closest('.catalog-item');
     const title = $item.find('h3').text();
     const priceText = $item.find('.price').text();
