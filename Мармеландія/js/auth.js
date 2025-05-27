@@ -1,4 +1,13 @@
+import { login as apiLogin, logout as apiLogout } from './api/auth.js';
+
 let isLoggedIn = false;
+
+function showError(selector, message) {
+    const errorElement = document.querySelector(`${selector} + .error-message`);
+    if (errorElement) {
+        errorElement.textContent = message;
+    }
+}
 
 function updateAuthButton() {
     const authButton = document.getElementById('authButton');
@@ -25,7 +34,7 @@ function updateAuthButton() {
             </a>
         `;
         
-        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             logout();
         });
@@ -38,65 +47,75 @@ function updateAuthButton() {
     }
 }
 
-function logout() {
-    isLoggedIn = false;
-    localStorage.setItem('isLoggedIn', 'false');
-    updateAuthButton();
-    
-    const path = window.location.pathname;
-    const isMainPage = path.endsWith('index.html') || path.endsWith('/');
-    const isInCategories = path.includes('/categories/');
-    
-    // Правильне перенаправлення при виході
-    if (isMainPage) {
-        window.location.href = 'index.html';
-    } else if (isInCategories) {
-        window.location.href = '../index.html';
-    } else {
-        window.location.href = '../index.html';
+// Функція для входу
+async function login(email, password) {
+    try {
+        const data = await apiLogin(email, password);
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('token', data.token);
+        updateAuthButton();
+        return data;
+    } catch (error) {
+        throw error;
     }
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+// Функція для виходу
+function logout() {
+    isLoggedIn = false;
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
+    apiLogout();
     updateAuthButton();
-});
+}
 
-
-// Додаємо функцію для обробки форми логіну
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Тут можна додати валідацію
-            if (!email || !password) {
-                alert('Будь ласка, заповніть всі поля');
-                return;
-            }
-            
-            // Імітація успішної авторизації
-            // В реальному проекті тут був би запит до сервера
-            login();
-            
-            // Перенаправлення на особистий кабінет
-            const path = window.location.pathname;
-            const isInCategories = path.includes('/categories/');
-            
-            if (isInCategories) {
-                window.location.href = '../pages/account.html';
-            } else {
-                window.location.href = 'account.html';
-            }
-        });
-    }
-    
     // Перевіряємо стан авторизації при завантаженні
     isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     updateAuthButton();
+
+    // Додаємо обробник форми логіну
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail')?.value;
+            const password = document.getElementById('loginPassword')?.value;
+            
+            // Валідація
+            let isValid = true;
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError('#loginEmail', 'Некоректний email');
+                isValid = false;
+            } else if (/.ru$/.test(email)) {
+                showError('#loginEmail', 'Домени .ru не дозволені');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showError('#loginPassword', 'Введіть пароль');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            try {
+                await login(email, password);
+                
+                // Перенаправлення на особистий кабінет
+                const path = window.location.pathname;
+                if (path.includes('/categories/')) {
+                    window.location.href = '../pages/account.html';
+                } else if (path.includes('/pages/')) {
+                    window.location.href = 'account.html';
+                } else {
+                    window.location.href = 'pages/account.html';
+                }
+            } catch (error) {
+                showError('#loginPassword', error.message || 'Помилка входу в систему');
+            }
+        });
+    }
 });

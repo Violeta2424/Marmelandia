@@ -6,12 +6,16 @@
     <title>Каталог | Marmelandia</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/catalog.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../js/db.js"></script>
-    <script src="../js/script.js" defer></script>
-        <script src="../js/auth.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-material-ui/material-ui.css">
+    <!-- Core scripts with defer -->
+    <script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+    <script defer type="module" src="../js/script.js"></script>
+    <script defer type="module" src="../js/auth.js"></script>
 </head>
 <body>
     <div class="gummybears-bg"></div>
@@ -26,13 +30,12 @@
                     <li><a href="delivery.html">Доставка</a></li>
                     <li><a href="#contacts">Контакти</a></li>
                     <li><a href="account.html">Кабінет</a></li>
-                                      <li id="authButton"><a href="pages/login.html" class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Увійти</a></li>
+                    <li id="authButton"><a href="login.html" class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Увійти</a></li>
                 </ul>
                 <div class="burger">
                     <span></span>
                     <span></span>
                     <span></span>
-
                 </div>
             </nav>
             <div class="cart-icon" id="cartIcon">
@@ -50,89 +53,122 @@
             </div>
            
             <div class="catalog-categories">
-                <a href="../categories/Marmalade.html" class="cat-link">Мармелад</a>
-                <a href="../categories/Juvastiki.html" class="cat-link">Жувастики</a>
-                <a href="../categories/Marshmalloow.html" class="cat-link">Маршмеллоу</a>
-                <a href="../categories/Chocolate.html" class="cat-link">Шоколад</a>
-                <a href="../categories/Licorice.html" class="cat-link">Лакриця</a>
-                <a href="../categories/Toxic.html" class="cat-link">Токсичні</a>
-                <a href="../categories/Vegan.html" class="cat-link">Веганські</a>
-                <a href="../categories/Sharp.html" class="cat-link">Гострі</a>
-                <a href="../categories/Sweet.html" class="cat-link">Солодкі</a>
-                <a href="../categories/Sour.html" class="cat-link">Кислі</a>
+                <a href="../categories/marmalade.html" class="cat-link">Мармелад</a>
+                <a href="../categories/juvastiki.html" class="cat-link">Жувастики</a>
+                <a href="../categories/marshmalloow.html" class="cat-link">Маршмеллоу</a>
+                <a href="../categories/chocolate.html" class="cat-link">Шоколад</a>
+                <a href="../categories/licorice.html" class="cat-link">Лакриця</a>
+                <a href="../categories/toxic.html" class="cat-link">Токсичні</a>
+                <a href="../categories/vegan.html" class="cat-link">Веганські</a>
+                <a href="../categories/sharp.html" class="cat-link">Гострі</a>
+                <a href="../categories/sweet.html" class="cat-link">Солодкі</a>
+                <a href="../categories/sour.html" class="cat-link">Кислі</a>
             </div>
         </section>
         <section class="gallery-section fade-in">
             <div class="gallery-carousel">
-                <div><img src="../image/2-1.png" alt="Слайд 1"></div>
-                <div><img src="../image/4-1.png" alt="Слайд 2"></div>
-                <div><img src="../image/5.png" alt="Слайд 3"></div>
-                <div><img src="../image/71R1L6QTQoL._AC_UF8941000_QL80_.jpg" alt="Слайд 4"></div>
-                <div><img src="../image/liquirizia_farcita_morbida_gommosa_sila_gum_1.jpg" alt="Слайд 5"></div>
-                <div><img src="../image/WatermelonBubblegum-scaled.webp" alt="Слайд 6"></div>
-                <div><img src="../image/Восьминіг.jpeg" alt="Слайд 7"></div>
-                <div><img src="../image/м'ячики.jpeg" alt="Слайд 8"></div>
-                <div><img src="../image/мінікабеля.webp" alt="Слайд 9"></div>
-                <div><img src="../image/хробачки2.jpg" alt="Слайд 10"></div>
-                <div><img src="../image/чипсіки.jpeg" alt="Слайд 11"></div>
+                <div><img src="../images/products/chocolate/5993.jpg" alt="Слайд 1"></div>
+                <div><img src="../images/products/juvastiki/WatermelonBubblegum-scaled.webp" alt="Слайд 2"></div>
+                <div><img src="../images/products/juvastiki/м'ячики.jpeg" alt="Слайд 3"></div>
+                <div><img src="../images/products/licorice/71R1L6QTQoL._AC_UF8941000_QL80_.jpg" alt="Слайд 4"></div>
+                <div><img src="../images/products/marmalade/Cherry-вишенька-головна.jpg" alt="Слайд 5"></div>
+                <div><img src="../images/products/sharp/343300629.jpeg" alt="Слайд 6"></div>
+                <div><img src="../images/products/sour/Восьминіг.jpeg" alt="Слайд 7"></div>
+                <div><img src="../images/products/sweet/зубки2.jpg" alt="Слайд 8"></div>
+                <div><img src="../images/products/toxic/4-1.png" alt="Слайд 9"></div>
+                <div><img src="../images/products/toxic/2-1.png" alt="Слайд 10"></div>
+                <div><img src="../images/products/toxic/5.png" alt="Слайд 11"></div>
             </div>
         </section>
         <section class="catalog-list">
             <h2 class="section-title">Рекомендовані товари</h2>
+            <div class="catalog-controls">
+                <!-- Пошук -->
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Пошук солодощів...">
+                    <button class="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+                
+                <!-- Сортування -->
+                <div class="sort-box">
+                    <select id="sort-select">
+                        <option value="name-asc">За назвою (А-Я)</option>
+                        <option value="name-desc">За назвою (Я-А)</option>
+                        <option value="price-asc">Ціна (від дешевших)</option>
+                        <option value="price-desc">Ціна (від дорожчих)</option>
+                    </select>
+                </div>
+
+                <!-- Фільтри -->
+                <div class="filter-box">
+                    <button class="filter-btn">Фільтри</button>
+                    <div class="filter-dropdown">
+                        <div class="filter-group">
+                            <h4>Ціна</h4>
+                            <input type="range" id="price-range" min="0" max="1000" step="10" value="1000">
+                            <span id="price-value">0-1000 грн</span>
+                        </div>
+                        <div class="filter-group" id="flavors-filter">
+                            <h4>Смаки</h4>
+                            <!-- Фільтри за смаками будуть додані динамічно -->
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="catalog-items">
-                 <div class="catalog-item" data-category="Toxic" data-price="175">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/4-1.png" alt="Toxic Waste Goop Gum">
-            <h3>Toxic Waste Goop Gum</h3>
-            <p class="price">175 грн</p>
-            <p class="description"> Жуйка з кислою начинкою</p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j1" data-category="Toxic" data-price="175">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/4-1.png" alt="Toxic Waste Goop Gum">
+                    <h3>Toxic Waste Goop Gum</h3>
+                    <p class="price">175 грн</p>
+                    <p class="description">Жуйка з кислою начинкою</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
 
-        <div class="catalog-item" data-category="Toxic" data-price="229">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/2-1.png" alt="Toxic Waste Smog Balls">
-            <h3>Toxic Waste Smog Balls</h3>
-            <p class="price">229 грн</p>
-            <p class="description"> Дуже кислі жувальні цукерки</p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j2" data-category="Toxic" data-price="229">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/2-1.png" alt="Toxic Waste Smog Balls">
+                    <h3>Toxic Waste Smog Balls</h3>
+                    <p class="price">229 грн</p>
+                    <p class="description">Дуже кислі жувальні цукерки</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
 
-        <div class="catalog-item" data-category="Juvastiki" data-price="100">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/WatermelonBubblegum-scaled.webp" alt="M&Sun-filled watermelons">
-            <h3>Наповнені сонцем кавунчики</h3>
-            <p class="price">100 грн</p>
-            <p class="description">Жувальна гумка Кавун – справжня вибухова насолода!</p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j3" data-category="Juvastiki" data-price="100">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/WatermelonBubblegum-scaled.webp" alt="M&Sun-filled watermelons">
+                    <h3>Наповнені сонцем кавунчики</h3>
+                    <p class="price">100 грн</p>
+                    <p class="description">Жувальна гумка Кавун – справжня вибухова насолода!</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
 
-        <div class="catalog-item" data-category="Juvastiki" data-price="100">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/м'ячики.jpeg" alt="Tennis balls">
-            <h3>Тенісні мʼячики</h3>
-            <p class="price">100 грн</p>
-            <p class="description">Жуйка «Тенісні м'ячики» – унікальне поєднання яскравого смаку та незвичайної текстури! </p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j4" data-category="Juvastiki" data-price="100">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/м'ячики.jpeg" alt="Tennis balls">
+                    <h3>Тенісні мʼячики</h3>
+                    <p class="price">100 грн</p>
+                    <p class="description">Жуйка «Тенісні м'ячики» – унікальне поєднання яскравого смаку та незвичайної текстури!</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
 
-        <div class="catalog-item" data-category="Licorice" data-price="100">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/71R1L6QTQoL._AC_UF8941000_QL80_.jpg" alt="Mint Fireflies from Licorice Meadow">
-            <h3>Мʼятні світлячки з Лакричної галявини</h3>
-            <p class="price">100 грн</p>
-            <p class="description">Мʼятні світлячки з Лакричної галявини — це незвичний мармелад зі смаком м'яти й лакриці.</p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j5" data-category="Licorice" data-price="100">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/71R1L6QTQoL._AC_UF8941000_QL80_.jpg" alt="Mint Fireflies from Licorice Meadow">
+                    <h3>Мʼятні світлячки з Лакричної галявини</h3>
+                    <p class="price">100 грн</p>
+                    <p class="description">Мʼятні світлячки з Лакричної галявини — це незвичний мармелад зі смаком м'яти й лакриці.</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
 
-        <div class="catalog-item" data-category="Soda" data-price="98">
-            <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-            <img src="../image/Восьминіг.jpeg" alt="Raspberry Captain Octopus (sour)">
-            <h3>Малиновий капітан восьминіжко (кислий)</h3>
-            <p class="price">98 грн</p>
-            <p class="description">Кислий мармелад Малиновий капітан восьминіжко — це справжній капітан серед мармеладних ласощів!</p>
-            <button class="add-to-cart">В кошик</button>
-        </div>
+                <div class="catalog-item" data-id="65f1a2b3c4d5e6f7g8h9i0j6" data-category="Soda" data-price="98">
+                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
+                    <img src="../image/Восьминіг.jpeg" alt="Raspberry Captain Octopus (sour)">
+                    <h3>Малиновий капітан восьминіжко (кислий)</h3>
+                    <p class="price">98 грн</p>
+                    <p class="description">Кислий мармелад Малиновий капітан восьминіжко — це справжній капітан серед мармеладних ласощів!</p>
+                    <button class="add-to-cart">В кошик</button>
+                </div>
             </div>
         </section>
     </main>
@@ -148,8 +184,6 @@
         </div>
         <p>© 2025 Мармеландія</p>
     </footer>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
-    <!-- Popup-кошик -->
     <div class="cart-popup" id="cartPopup" style="display: none;">
       <div class="popup-content cart-content">
         <button class="close-btn" id="closeCart">&times;</button>

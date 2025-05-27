@@ -1,0 +1,82 @@
+/* Фільтри */
+.filter-group {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-group h4 {
+  margin: 0 0 15px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
+
+.filter-checkbox:hover {
+  color: #ff4fa3;
+}
+
+.filter-checkbox input {
+  margin-right: 8px;
+}
+
+.filter-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  object-fit: contain;
+}
+
+.flavor-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.allergenic-warning {
+  color: #ff4f4f;
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 250px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 15px;
+  display: none;
+  z-index: 1000;
+}
+
+.filter-dropdown.active {
+  display: block;
+}
+
+/* Анімація для фільтрів */
+.filter-checkbox input:checked + .filter-icon,
+.filter-checkbox input:checked + .flavor-dot {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.filter-checkbox .filter-icon,
+.filter-checkbox .flavor-dot {
+  transition: transform 0.2s ease;
+} 

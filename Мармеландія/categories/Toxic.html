@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Категорія | Marmelandia</title>
+    <title>Токсичні солодощі | Marmelandia</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/catalog.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../js/db.js"></script>
-    <script src="../js/script.js" defer></script>
-        <script src="../js/auth.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="../js/script.js" type="module"></script>
+    <script src="../js/auth.js" type="module"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="gummybears-bg"></div>
@@ -70,7 +69,7 @@
             <div class="filter-dropdown">
                 <div class="filter-group">
                     <h4>Ціна</h4>
-                    <input type="range" id="price-range" min="0" max="1000" step="10">
+                    <input type="range" id="price-range" min="0" max="1000" step="10" value="1000">
                     <span id="price-value">0-1000 грн</span>
                 </div>
             </div>
@@ -79,23 +78,6 @@
         </section>
         <section class="catalog-list">
             <div class="catalog-items" id="category-items">
-                <div class="catalog-item" data-category="Toxic" data-price="175">
-                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-                    <img src="../image/4-1.png" alt="Toxic Waste Goop Gum">
-                    <h3>Toxic Waste Goop Gum</h3>
-                    <p class="price">175 грн</p>
-                    <p class="description"> Жуйка з кислою начинкою</p>
-                    <button class="add-to-cart">В кошик</button>
-                </div>
-        
-                <div class="catalog-item" data-category="Toxic" data-price="229">
-                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-                    <img src="../image/2-1.png" alt="Toxic Waste Smog Balls">
-                    <h3>Toxic Waste Smog Balls</h3>
-                    <p class="price">229 грн</p>
-                    <p class="description"> Дуже кислі жувальні цукерки</p>
-                    <button class="add-to-cart">В кошик</button>
-                </div>
             </div>
         </section>
     </main>

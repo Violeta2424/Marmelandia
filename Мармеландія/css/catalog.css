@@ -202,6 +202,7 @@
 /* Фільтри */
 .filter-box {
     position: relative;
+    z-index: 100;
 }
 
 .filter-btn {
@@ -221,20 +222,23 @@
 
 .filter-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 10px);
     right: 0;
     width: 250px;
     background: white;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     padding: 20px;
-    margin-top: 10px;
-    display: none;
-    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
 }
 
 .filter-dropdown.active {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .filter-group {
@@ -330,6 +334,82 @@
   0% { transform: scale(0.7); }
   80% { transform: scale(1.18); }
   100% { transform: scale(1); }
+}
+
+/* Фільтри за смаками */
+.flavor-dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.flavor-name {
+  vertical-align: middle;
+}
+
+.allergenic-warning {
+  color: #ff4f4f;
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-checkbox:hover {
+  color: #ff4fa3;
+}
+
+.filter-checkbox input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.filter-checkbox input[type="checkbox"]:checked + .flavor-dot {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px #ff4fa3;
+}
+
+/* Анімація для фільтрів */
+.filter-dropdown {
+  transform-origin: top center;
+  transition: all 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+}
+
+.filter-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Кнопка скидання фільтрів */
+.reset-filters {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  margin-top: 10px;
+  background: #ff4fa3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.reset-filters:hover {
+  background: #ff3396;
 }
 
 

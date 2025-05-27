@@ -1,6 +1,72 @@
 // === Основний JavaScript для сайту ===
+import { API_URL, getAuthHeaders } from './api/config.js';
+import { getProducts, getRecommendedProducts } from './api/products.js';
+import { getTypes } from './api/types.js';
+import { getFlavors } from './api/flavors.js';
+import { getCart, addToCart, updateCartItem, removeFromCart, clearCart } from './api/cart.js';
+import { getFavorites, addToFavorites, removeFromFavorites } from './api/favorites.js';
+import { getMyOrders } from './api/orders.js';
 
-$(document).ready(function () {
+// Глобальні змінні
+let cart = { items: [] };
+let originalProducts = []; // Зберігаємо оригінальний список товарів
+let types = []; // Зберігаємо список типів
+let flavors = []; // Зберігаємо список смаків
+
+// Перевірка наявності SweetAlert2
+let sweetAlertLoaded = false;
+let sweetAlertInitialized = false;
+let initializationAttempts = 0;
+const MAX_INITIALIZATION_ATTEMPTS = 3;
+const INITIALIZATION_TIMEOUT = 10000; // 10 seconds
+
+// Функція для ініціалізації SweetAlert2
+async function initializeSweetAlert() {
+  if (sweetAlertInitialized) {
+    return Promise.resolve(true);
+  }
+
+  if (initializationAttempts >= MAX_INITIALIZATION_ATTEMPTS) {
+    console.error('Досягнуто максимальну кількість спроб ініціалізації SweetAlert2');
+    return Promise.resolve(false);
+  }
+
+  initializationAttempts++;
+
+  return new Promise((resolve) => {
+    const checkSwal = setInterval(() => {
+      if (typeof Swal !== 'undefined') {
+        sweetAlertLoaded = true;
+        sweetAlertInitialized = true;
+        clearInterval(checkSwal);
+        console.log('SweetAlert2 успішно ініціалізовано');
+        resolve(true);
+      }
+    }, 100);
+
+    setTimeout(() => {
+      clearInterval(checkSwal);
+      if (!sweetAlertInitialized) {
+        console.warn(`Спроба ${initializationAttempts}/${MAX_INITIALIZATION_ATTEMPTS}: SweetAlert2 не завантажився протягом ${INITIALIZATION_TIMEOUT/1000} секунд`);
+        // Спробуємо перезавантажити скрипт
+        if (initializationAttempts < MAX_INITIALIZATION_ATTEMPTS) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+          script.async = true;
+          script.onload = () => {
+            console.log('SweetAlert2 перезавантажено');
+            initializeSweetAlert().then(resolve);
+          };
+          document.head.appendChild(script);
+        } else {
+          resolve(false);
+        }
+      }
+    }, INITIALIZATION_TIMEOUT);
+  });
+}
+
+$(document).ready(async function () {
   // ===== 1. Бургер-меню =====
   $('.burger').click(function () {
     $(this).toggleClass('open');
@@ -47,44 +113,293 @@ $(document).ready(function () {
 
   // ===== 5. Фільтри та сортування =====
   let originalProducts = []; // Зберігаємо оригінальний список товарів
+  let types = []; // Зберігаємо список типів
+  let flavors = []; // Зберігаємо список смаків
 
-  // Ініціалізація при завантаженні сторінки
-  function initializeProducts() {
-    const $items = $('.catalog-items');
-    originalProducts = $items.children('.catalog-item').get().map(item => ({
-      element: item,
-      name: $(item).find('h3').text(),
-      price: parseInt($(item).data('price')) || 0,
-      description: $(item).find('.description').text()
-    }));
+  // Завантаження типів та смаків
+  async function loadFilters() {
+    try {
+      const [typesData, flavorsData] = await Promise.all([
+        getTypes(),
+        getFlavors()
+      ]);
+      
+      // Додаємо фільтр типів
+      const $typeFilter = $('<div class="filter-group"><h4>Тип солодощів</h4></div>');
+      typesData.forEach(type => {
+        $typeFilter.append(`
+          <label class="filter-checkbox">
+            <input type="checkbox" name="type" value="${type._id}">
+            <span class="type-name">${type.name}</span>
+          </label>
+        `);
+      });
+      $('.filter-dropdown').prepend($typeFilter);
+
+      // Додаємо фільтр смаків
+      const $flavorFilter = $('#flavors-filter');
+      if ($flavorFilter.length) {
+        $flavorFilter.empty();
+        $flavorFilter.append('<h4>Смаки</h4>');
+        
+        flavorsData.forEach(flavor => {
+          $flavorFilter.append(`
+            <label class="filter-checkbox">
+              <input type="checkbox" name="flavor" value="${flavor._id}">
+              <span class="flavor-name">${flavor.name}</span>
+            </label>
+          `);
+        });
+      }
+
+      // Додаємо кнопку скидання фільтрів
+      if ($('.filter-box').find('.reset-filters').length === 0) {
+        $('.filter-box').append(`
+          <button class="reset-filters">
+            Скинути фільтри
+          </button>
+        `);
+      }
+
+      // Обробник для скидання фільтрів
+      $('.reset-filters').on('click', function() {
+        $('input[type="checkbox"]').prop('checked', false);
+        $('#price-range').val(1000);
+        $('#price-value').text('0-1000 грн');
+        $('#search-input').val('');
+        filterAndSortProducts();
+      });
+
+      // Додаємо обробники подій для фільтрів
+      $('.filter-checkbox input').on('change', filterAndSortProducts);
+    } catch (error) {
+      console.error('Помилка завантаження фільтрів:', error);
+    }
+  }
+
+  // Завантаження та відображення товарів
+  async function loadProducts() {
+    try {
+      const products = await getProducts();
+      originalProducts = products.map(product => ({
+        element: createProductElement(product),
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        typeId: product.typeId,
+        flavorId: product.flavorId
+      }));
+      filterAndSortProducts();
+    } catch (error) {
+      console.error('Помилка завантаження товарів:', error);
+      $('.catalog-items').html('<div class="error-message">Помилка завантаження товарів. Спробуйте оновити сторінку.</div>');
+    }
+  }
+
+  // Завантаження та відображення рекомендованих товарів
+  async function loadRecommendedProducts() {
+    try {
+      // Завантажуємо фільтри
+      await loadFilters();
+      
+      const products = await getRecommendedProducts();
+      originalProducts = products.map(product => ({
+        element: createProductElement(product),
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        typeId: product.typeId,
+        flavorId: product.flavorId
+      }));
+      
+      // Оновлюємо відображення
+      filterAndSortProducts();
+      
+      // Додаємо обробники подій для фільтрів
+      initializeFilters();
+      
+    } catch (error) {
+      console.error('Помилка завантаження рекомендованих товарів:', error);
+      $('.catalog-items').html('<div class="error-message">Помилка завантаження товарів. Спробуйте оновити сторінку.</div>');
+    }
+  }
+
+  // Завантаження та відображення товарів за категорією
+  async function loadCategoryProducts(categoryType) {
+    try {
+      console.log('Завантаження товарів для категорії:', categoryType);
+      
+      // Отримуємо продукти з API
+      const products = await getProducts({ typeId: categoryType });
+      console.log('Всі товари:', products);
+      
+      // Зберігаємо оригінальні продукти
+      originalProducts = products.map(product => ({
+        element: createProductElement(product),
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        typeId: product.typeId,
+        flavorId: product.flavorId
+      }));
+      
+      // Оновлюємо відображення
+      filterAndSortProducts();
+      
+      // Ініціалізуємо фільтр ціни
+      initializePriceFilter();
+      
+    } catch (error) {
+      console.error('Помилка завантаження товарів категорії:', error);
+      $('.catalog-items').html('<div class="error-message">Помилка завантаження товарів. Спробуйте оновити сторінку.</div>');
+    }
+  }
+
+  // Ініціалізація фільтру ціни для категорій
+  function initializePriceFilter() {
+    // Оновлення відображення ціни при зміні слайдера
+    $('#price-range').on('input', function () {
+      const value = $(this).val();
+      $('#price-value').text(`0-${value} грн`);
+      filterAndSortProducts();
+    });
+
+    // Показати/сховати фільтр при кліку на кнопку
+    $('.filter-btn').off('click').on('click', function (e) {
+      e.stopPropagation();
+      const $dropdown = $(this).siblings('.filter-dropdown');
+      $('.filter-dropdown').not($dropdown).removeClass('active');
+      $dropdown.toggleClass('active');
+    });
+
+    // Закрити фільтр при кліку поза ним
+    $(document).off('click.filters').on('click.filters', function (e) {
+      if (!$(e.target).closest('.filter-box').length) {
+        $('.filter-dropdown').removeClass('active');
+      }
+    });
+  }
+
+  // Створення HTML-елемента товару
+  function createProductElement(product) {
+    const $item = $('<div class="catalog-item"></div>');
+    
+    // Використовуємо відносний шлях для зображення
+    const imageUrl = product.image || '/images/products/default.jpg';
+    
+    $item.html(`
+      <img src="${imageUrl}" alt="${product.name}">
+      <h3>${product.name}</h3>
+      <div class="description">${product.description}</div>
+      <div class="price">${product.price} грн</div>
+      <div class="product-actions">
+        <button class="add-to-cart">Додати в кошик</button>
+        <button class="favorite-btn"><i class="fas fa-heart"></i></button>
+      </div>
+    `);
+    
+    $item.data('id', product._id);
+    $item.data('price', product.price);
+    $item.data('type', product.typeId);
+    $item.data('flavors', Array.isArray(product.flavorId) ? product.flavorId.join(',') : '');
+    
+    return $item[0];
+  }
+
+  // Ініціалізація при завантаженні
+  if ($('.catalog-items').length) {
+    const pathname = window.location.pathname.toLowerCase(); // Перетворюємо шлях у нижній регістр
+    console.log('Поточний шлях:', pathname);
+    
+    if (pathname.includes('catalog.html')) {
+      loadFilters().then(() => {
+        loadProducts();
+        loadFavorites();
+      });
+    } else if (pathname.includes('toxic.html')) {
+      console.log('Завантаження токсичних товарів');
+      loadCategoryProducts('Toxic');
+      loadFavorites();
+    } else if (pathname.includes('sweet.html')) {
+      loadCategoryProducts('Sweet');
+      loadFavorites();
+    } else if (pathname.includes('sour.html')) {
+      loadCategoryProducts('Sour');
+      loadFavorites();
+    } else if (pathname.includes('chocolate.html')) {
+      loadCategoryProducts('Chocolate');
+      loadFavorites();
+    } else if (pathname.includes('juvastiki.html')) {
+      loadCategoryProducts('Juvastiki');
+      loadFavorites();
+    } else if (pathname.includes('sharp.html')) {
+      loadCategoryProducts('Sharp');
+      loadFavorites();
+    } else if (pathname.includes('vegan.html')) {
+      loadCategoryProducts('Vegan');
+      loadFavorites();
+    } else if (pathname.includes('marshmalloow.html')) {
+      loadCategoryProducts('Marshmalloow');
+      loadFavorites();
+    } else if (pathname.includes('licorice.html')) {
+      loadCategoryProducts('Licorice');
+      loadFavorites();
+    } else if (pathname.includes('marmalade.html')) {
+      loadCategoryProducts('Marmalade');
+      loadFavorites();
+    } else {
+      loadRecommendedProducts();
+      loadFavorites();
+    }
   }
 
   // Функція фільтрації та сортування
-  function filterAndSortProducts() {
-    const searchText = $('#search-input').val().toLowerCase().trim();
-    const sortValue = $('#sort-select').val();
+  async function filterAndSortProducts() {
+    try {
     const maxPrice = parseInt($('#price-range').val()) || 1000;
+      const pathname = window.location.pathname.toLowerCase();
+      
+      // Визначаємо, чи знаходимося ми на сторінці категорії
+      const isCategory = pathname.includes('/categories/');
+      
+      let filteredProducts;
+      if (isCategory) {
+        // Для категорій фільтруємо тільки за ціною
+        filteredProducts = originalProducts.filter(product => 
+          (!maxPrice || product.price <= maxPrice)
+        );
+      } else {
+        // Для основного каталогу використовуємо всі фільтри
+        const searchText = $('#search-input').val()?.toLowerCase().trim() || '';
+        const selectedTypes = $('input[name="type"]:checked').map(function() {
+          return $(this).val();
+        }).get();
+        const selectedFlavors = $('input[name="flavor"]:checked').map(function() {
+          return $(this).val();
+        }).get();
 
-    // Фільтруємо товари
-    let filteredProducts = originalProducts.filter(product => {
-      const matchesSearch = searchText === '' || 
-        product.name.toLowerCase().includes(searchText) || 
-        product.description.toLowerCase().includes(searchText);
-      const matchesPrice = product.price <= maxPrice;
-      return matchesSearch && matchesPrice;
-    });
+        const filters = {
+          search: searchText || undefined,
+          maxPrice: maxPrice || undefined,
+          typeId: selectedTypes.length > 0 ? selectedTypes : undefined,
+          flavorId: selectedFlavors.length > 0 ? selectedFlavors : undefined
+        };
 
-    // Сортуємо товари
+        filteredProducts = await getProducts(filters);
+      }
+
+      // Сортуємо продукти
+      const sortValue = $('#sort-select').val() || 'name-asc';
     filteredProducts.sort((a, b) => {
       switch(sortValue) {
         case 'name-asc':
-          return a.name.localeCompare(b.name, 'uk');
+            return (a.name || '').localeCompare((b.name || ''), 'uk');
         case 'name-desc':
-          return b.name.localeCompare(a.name, 'uk');
+            return (b.name || '').localeCompare((a.name || ''), 'uk');
         case 'price-asc':
-          return a.price - b.price;
+            return (a.price || 0) - (b.price || 0);
         case 'price-desc':
-          return b.price - a.price;
+            return (b.price || 0) - (a.price || 0);
         default:
           return 0;
       }
@@ -92,29 +407,29 @@ $(document).ready(function () {
 
     // Оновлюємо відображення
     const $items = $('.catalog-items');
+      if (!$items.length) {
+        console.warn('Елемент .catalog-items не знайдено при оновленні');
+        return;
+      }
+
     $items.empty();
 
     if (filteredProducts.length === 0) {
       $items.html('<div class="no-results" style="text-align:center;padding:20px;color:#666;">Товарів не знайдено</div>');
     } else {
       filteredProducts.forEach(product => {
-        $items.append(product.element);
-      });
+          const $item = $(createProductElement(product));
+          $items.append($item);
+        });
+      }
+    } catch (error) {
+      console.error('Помилка при фільтрації продуктів:', error);
+      $('.catalog-items').html('<div class="error-message">Помилка завантаження товарів. Спробуйте оновити сторінку.</div>');
     }
   }
 
-  // Обробники подій
-  $('.filter-btn').click(function (e) {
-    e.stopPropagation();
-    $('.filter-dropdown').toggleClass('active');
-  });
-
-  $(document).click(function (e) {
-    if (!$(e.target).closest('.filter-box').length) {
-      $('.filter-dropdown').removeClass('active');
-    }
-  });
-
+  // Ініціалізація фільтрів
+  function initializeFilters() {
   // Оновлення відображення ціни при зміні слайдера
   $('#price-range').on('input', function () {
     const value = $(this).val();
@@ -122,38 +437,25 @@ $(document).ready(function () {
     filterAndSortProducts();
   });
 
-  // Обробники подій для пошуку та сортування
-  $('#search-input').on('input', function() {
-    filterAndSortProducts();
-  });
+    // Показати/сховати фільтр при кліку на кнопку
+    $('.filter-btn').off('click').on('click', function (e) {
+      e.stopPropagation();
+      const $dropdown = $(this).siblings('.filter-dropdown');
+      $('.filter-dropdown').not($dropdown).removeClass('active');
+      $dropdown.toggleClass('active');
+    });
 
-  $('#sort-select').on('change', function() {
-    filterAndSortProducts();
-  });
+    // Закрити фільтр при кліку поза ним
+    $(document).off('click.filters').on('click.filters', function (e) {
+      if (!$(e.target).closest('.filter-box').length) {
+        $('.filter-dropdown').removeClass('active');
+      }
+    });
 
-  // Ініціалізація при завантаженні сторінки
-  $(document).ready(function() {
-    initializeProducts();
-    filterAndSortProducts();
-  });
-
-  // Скидання фільтрів
-  function resetFilters() {
-    $('#search-input').val('');
-    $('#price-range').val(1000);
-    $('#price-value').text('0-1000 грн');
-    $('#sort-select').val('name-asc');
-    filterAndSortProducts();
+    // Обробники для пошуку та сортування
+    $('#search-input').off('input').on('input', filterAndSortProducts);
+    $('#sort-select').off('change').on('change', filterAndSortProducts);
   }
-
-  // Додаємо кнопку скидання фільтрів
-  if ($('.filter-box').find('.reset-filters').length === 0) {
-    $('.filter-box').append('<button class="reset-filters" style="margin-top:10px;padding:8px 16px;background:#ff4fa3;color:white;border:none;border-radius:8px;cursor:pointer;">Скинути фільтри</button>');
-  }
-
-  $('.reset-filters').on('click', function() {
-    resetFilters();
-  });
 
   // ===== 7. Табуляція =====
   $('.tab-btn').click(function () {
@@ -366,12 +668,7 @@ $(document).ready(function () {
       $('#contactModal').removeClass('active');
 
       // Show success message
-      Swal.fire({
-        icon: 'success',
-        title: 'Дякуємо!',
-        text: 'Ваше повідомлення надіслано',
-        confirmButtonColor: 'rgb(255, 0, 144)'
-      });
+      showNotification('Ваше повідомлення надіслано');
     }
   });
 
@@ -393,33 +690,6 @@ $(document).ready(function () {
     const input = $(this).siblings('input');
     input.attr('type', input.attr('type') === 'password' ? 'text' : 'password');
     $(this).toggleClass('fa-eye fa-eye-slash');
-  });
-
-  $('#loginForm').on('submit', function (e) {
-    e.preventDefault();
-    const email = $('#loginEmail').val();
-    const password = $('#loginPassword').val();
-    let isValid = true;
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) showError('#loginEmail', 'Некоректний email');
-    else if (/.ru$/.test(email)) showError('#loginEmail', 'Домени .ru не дозволені');
-    if (!password) showError('#loginPassword', 'Введіть пароль');
-    if ($('.form-group.error').length === 0) Swal.fire('Успішно!', 'Ви увійшли в систему', 'success');
-  });
-
-  $('#registerForm').on('submit', function (e) {
-    e.preventDefault();
-    let isValid = true;
-    const name = $('#regName').val();
-    const email = $('#regEmail').val();
-    const password = $('#regPassword').val();
-    const confirm = $('#regPasswordConfirm').val();
-    if (!name || name.length < 2) { showError('#regName', 'Мінімум 2 символи'); isValid = false; }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) showError('#regEmail', 'Некоректний email');
-    else if (/.ru$/.test(email)) showError('#regEmail', 'Домени .ru не дозволені');
-    if (!password || !/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) showError('#regPassword', 'Мінімум 8 символів, літери і цифри');
-    if (password !== confirm) showError('#regPasswordConfirm', 'Паролі не співпадають');
-    if (!$('#terms').is(':checked')) showError('#terms', 'Погодьтесь з умовами');
-    if ($('.form-group.error').length === 0) Swal.fire('Успішно!', 'Реєстрація пройшла успішно', 'success');
   });
 
   $('.auth-form input').on('input', function () {
@@ -503,105 +773,140 @@ $(document).ready(function () {
   }
 
   // ===== Кошик =====
-  // Відкрити кошик
-  $('#cartIcon').on('click', function() {
-    $('#cartPopup').fadeIn(200).addClass('active');
-    renderCart();
-  });
-  // Закрити кошик
-  $('#closeCart').on('click', function() {
-    $('#cartPopup').fadeOut(200).removeClass('active');
-  });
-  // Закриття по кліку поза popup
-  $(document).on('mousedown', function(e) {
-    if ($('#cartPopup').hasClass('active')) {
-      if ($(e.target).is('#cartPopup')) {
-        $('#cartPopup').fadeOut(200).removeClass('active');
-      }
+  let cart = { items: [] };
+  let favorites = [];
+
+  // Завантаження кошика
+  async function loadCart() {
+    try {
+      cart = await getCart();
+      updateCartCount();
+      updateCartDisplay();
+    } catch (error) {
+      console.error('Помилка завантаження кошика:', error);
     }
-  });
-  // Додавання товару в кошик
-  $(document).on('click', '.add-to-cart', function() {
-    const $item = $(this).closest('.catalog-item');
-    const title = $item.find('h3').text();
-    const priceText = $item.find('.price').text();
-    const price = parseInt(priceText);
-    const img = $item.find('img').attr('src');
-    addToCart({ title, price, img });
-  });
-  // Додаємо/оновлюємо товар у LocalStorage
-  async function addToCart(product) {
-    let cart = await db.getData('cart');
-    const idx = cart.findIndex(item => item.title === product.title);
-    if (idx > -1) {
-      cart[idx].qty += 1;
-    } else {
-      cart.push({ ...product, qty: 1 });
-    }
-    await db.saveData('cart', cart);
-    updateCartCount();
   }
-  // Оновлення лічильника
-  async function updateCartCount() {
-    let cart = await db.getData('cart');
-    let count = cart.reduce((sum, item) => sum + item.qty, 0);
+
+  // Завантаження улюблених
+  async function loadFavorites() {
+    try {
+      // Перевіряємо, чи користувач авторизований
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.favorites = []; // Використовуємо window для глобальної доступності
+        updateFavoriteButtons();
+        return;
+      }
+
+      window.favorites = await getFavorites();
+      updateFavoriteButtons();
+    } catch (error) {
+      console.error('Помилка завантаження улюблених:', error);
+      window.favorites = []; // У випадку помилки очищаємо масив
+      updateFavoriteButtons();
+    }
+  }
+
+  // Оновлення лічильника кошика
+  function updateCartCount() {
+    const count = cart.items.reduce((sum, item) => sum + item.quantity, 0);
     $('#cartCount').text(count);
   }
-  // Відображення кошика
-  async function renderCart() {
-    let cart = await db.getData('cart');
-    let $cartItems = $('#cartItems');
+
+  // Оновлення відображення кошика
+  function updateCartDisplay() {
+    const $cartItems = $('#cartItems');
     $cartItems.empty();
-    let total = 0;
-    if (cart.length === 0) {
+
+    if (cart.items.length === 0) {
       $cartItems.html('<p>Кошик порожній</p>');
-      $('#checkoutBtn').hide();
-    } else {
-      cart.forEach((item, i) => {
-        total += item.price * item.qty;
-        $cartItems.append(`
-          <div class="cart-item-row">
-            <img src="${item.img}" alt="${item.title}" class="cart-item-img" style="width:44px;height:44px;object-fit:cover;border-radius:12px;margin-right:10px;">
-            <span class="cart-item-title">${item.title}</span>
-            <div class="cart-qty-controls">
-              <button class="cart-qty-btn minus" data-idx="${i}">-</button>
-              <span class="cart-item-qty">${item.qty}</span>
-              <button class="cart-qty-btn plus" data-idx="${i}">+</button>
+      $('#cartTotal').text('0 грн');
+      return;
+    }
+
+    let total = 0;
+    cart.items.forEach(item => {
+      const product = item.product;
+      const subtotal = product.price * item.quantity;
+      total += subtotal;
+
+      const $item = $(`
+        <div class="cart-item" data-id="${product._id}">
+          <img src="${product.image}" alt="${product.name}">
+          <div class="cart-item-details">
+            <h3>${product.name}</h3>
+            <p class="price">${product.price} грн</p>
+            <div class="quantity-controls">
+              <button class="quantity-btn minus">-</button>
+              <span class="quantity">${item.quantity}</span>
+              <button class="quantity-btn plus">+</button>
             </div>
-            <span class="cart-item-price">${item.price * item.qty} грн</span>
-            <button class="remove-cart-item" data-idx="${i}" title="Видалити">&times;</button>
+          </div>
+          <button class="remove-item">&times;</button>
           </div>
         `);
-      });
-      $('#checkoutBtn').show();
-    }
-    $('#cartTotal').text(total + ' грн');
+
+      $cartItems.append($item);
+    });
+
+    $('#cartTotal').text(`${total} грн`);
   }
-  // Кнопки + і - для зміни кількості
-  $(document).on('click', '.cart-qty-btn', async function() {
-    let idx = $(this).data('idx');
-    let cart = await db.getData('cart');
-    if ($(this).hasClass('plus')) {
-      cart[idx].qty += 1;
-    } else if ($(this).hasClass('minus')) {
-      cart[idx].qty -= 1;
-      if (cart[idx].qty < 1) cart[idx].qty = 1;
+
+  // Додавання товару до кошика
+  async function handleAddToCart(productId, quantity = 1) {
+    try {
+      cart = await addToCart(productId, quantity);
+      updateCartCount();
+      updateCartDisplay();
+      showNotification('Товар додано до кошика');
+    } catch (error) {
+      console.error('Помилка додавання товару:', error);
+      showNotification('Помилка додавання товару', 'error');
     }
-    await db.saveData('cart', cart);
-    renderCart();
+  }
+
+  // Оновлення кількості товару
+  async function handleUpdateQuantity(productId, quantity) {
+    try {
+      if (quantity <= 0) {
+        await handleRemoveFromCart(productId);
+      } else {
+        cart = await updateCartItem(productId, quantity);
     updateCartCount();
-  });
+        updateCartDisplay();
+      }
+    } catch (error) {
+      console.error('Помилка оновлення кількості:', error);
+      showNotification('Помилка оновлення кількості', 'error');
+    }
+  }
+
   // Видалення товару з кошика
-  $(document).on('click', '.remove-cart-item', async function() {
-    let idx = $(this).data('idx');
-    let cart = await db.getData('cart');
-    cart.splice(idx, 1);
-    await db.saveData('cart', cart);
-    renderCart();
+  async function handleRemoveFromCart(productId) {
+    try {
+      cart = await removeFromCart(productId);
     updateCartCount();
-  });
-  // Оновити лічильник при завантаженні
+      updateCartDisplay();
+      showNotification('Товар видалено з кошика');
+    } catch (error) {
+      console.error('Помилка видалення товару:', error);
+      showNotification('Помилка видалення товару', 'error');
+    }
+  }
+
+  // Очищення кошика
+  async function handleClearCart() {
+    try {
+      await clearCart();
+      cart = { items: [] };
   updateCartCount();
+      updateCartDisplay();
+      showNotification('Кошик очищено');
+    } catch (error) {
+      console.error('Помилка очищення кошика:', error);
+      showNotification('Помилка очищення кошика', 'error');
+    }
+  }
 
   // ===== Оформлення замовлення =====
   // Додаємо форму у popup-кошик (один раз)
@@ -771,34 +1076,44 @@ $(document).ready(function () {
     e.preventDefault();
     
     if (validateOrderForm()) {
-      const cart = await db.getData('cart');
       const order = {
         date: new Date().toLocaleString('uk-UA'),
-        items: cart,
-        total: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-        name: $('#orderName').val().trim(),
-        email: $('#orderEmail').val().trim(),
-        phone: $('#orderPhone').val().trim(),
-        comment: $('#orderComment').val().trim()
-      };
+        items: cart.items,
+        total: cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+      name: $('#orderName').val().trim(),
+      email: $('#orderEmail').val().trim(),
+      phone: $('#orderPhone').val().trim(),
+      comment: $('#orderComment').val().trim()
+    };
+    
+      try {
+        // Зберігаємо замовлення через API
+        const response = await fetch(`${API_URL}/orders`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(order)
+        });
 
-      // Зберігаємо замовлення
-      const orders = await db.getData('orders');
-      orders.push(order);
-      await db.saveData('orders', orders);
+        if (!response.ok) {
+          throw new Error('Помилка при створенні замовлення');
+        }
 
-      // Очищаємо кошик
-      await db.clearStore('cart');
+        // Очищаємо кошик
+        await handleClearCart();
       
       $('.order-success').text('Дякуємо! Ваше замовлення прийнято.').show();
       setTimeout(function(){
         $('#cartPopup').fadeOut(200).removeClass('active');
         $('#orderForm')[0].reset();
         $('.order-success').hide();
-        renderCart();
+          updateCartDisplay();
         updateCartCount();
         $('#orderForm').slideUp(200);
       }, 2000);
+      } catch (error) {
+        console.error('Помилка при оформленні замовлення:', error);
+        $('.order-success').text('Помилка при оформленні замовлення. Спробуйте ще раз.').show();
+      }
     }
   });
 
@@ -811,159 +1126,30 @@ $(document).ready(function () {
   // ===== Особистий кабінет: збереження профілю =====
   async function loadProfile() {
     if (window.location.pathname.includes('account.html')) {
-      const profile = await db.getData('profile');
-      if (profile && profile.length > 0) {
-        const userProfile = profile[0];
-        if (userProfile.name) $('#profileName').val(userProfile.name);
-        if (userProfile.email) $('#profileEmail').val(userProfile.email);
-        if (userProfile.phone) $('#profilePhone').val(userProfile.phone);
-        if (userProfile.address) $('#profileAddress').val(userProfile.address);
-      }
+      try {
+        const response = await fetch(`${API_URL}/profile`, {
+          headers: getAuthHeaders()
+        });
+        if (response.ok) {
+          const profile = await response.json();
+          if (profile) {
+      if (profile.name) $('#profileName').val(profile.name);
+      if (profile.email) $('#profileEmail').val(profile.email);
+      if (profile.phone) $('#profilePhone').val(profile.phone);
+      if (profile.address) $('#profileAddress').val(profile.address);
     }
   }
-  loadProfile();
-
-  // Add input hints
-  $('#profileName').on('focus', function() {
-    $(this).attr('placeholder', 'Наприклад: Петренко Марія Іванівна');
-  }).on('blur', function() {
-    $(this).attr('placeholder', '');
-  });
-
-  $('#profileEmail').on('focus', function() {
-    $(this).attr('placeholder', 'Наприклад: maria@ukr.net');
-  }).on('blur', function() {
-    $(this).attr('placeholder', '');
-  });
-
-  function validateProfileForm() {
-    let isValid = true;
-    $('.error-message').text('');
-    $('.form-group').removeClass('error');
-
-    // PIB validation
-    const pib = $('#profileName').val().trim();
-    const pibParts = pib.split(/\s+/).filter(part => part.length > 0);
-    
-    // Russian letters pattern
-    const russianLetters = /[ёъыэ]/i;
-    
-    // Check for repeated characters
-    const repeatedChars = /(.)\1{4,}/;
-    
-    if (!pib) {
-      showError('#profileName', 'Будь ласка, введіть ПІБ');
-      isValid = false;
-    } else if (russianLetters.test(pib)) {
-      showError('#profileName', 'Використання російських літер заборонено. Будь ласка, використовуйте українську мову');
-      isValid = false;
-    } else if (repeatedChars.test(pib)) {
-      showError('#profileName', 'ПІБ не може містити більше 4 однакових символів підряд');
-      isValid = false;
-    } else if (pibParts.length < 3) {
-      showError('#profileName', 'Будь ласка, введіть повне ПІБ (прізвище, ім\'я, по батькові) щонайменше по 2 символи кожне.');
-      isValid = false;
-    } else if (pibParts.some(part => part.length < 2)) {
-      showError('#profileName', 'Кожна частина ПІБ має містити щонайменше 2 символи');
-      isValid = false;
-    } else if (!/^[а-яА-ЯҐґЄєІіЇї\s']+$/.test(pib)) {
-      showError('#profileName', 'ПІБ не може містити цифри або спеціальні символи');
-      isValid = false;
-    }
-
-    // Email validation
-    const email = $('#profileEmail').val().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const tempEmailDomains = ['mailinator.com', '10minutemail.com', 'tempmail.com', 'yopmail.com'];
-    
-    if (!email) {
-      showError('#profileEmail', 'Введіть email-адресу');
-      isValid = false;
-    } else if (russianLetters.test(email)) {
-      showError('#profileEmail', 'Використання російських літер заборонено');
-      isValid = false;
-    } else if (!emailRegex.test(email)) {
-      showError('#profileEmail', 'Email повинен містити символ @ і не починатися з нього');
-      isValid = false;
-    } else if (email.length < 6) {
-      showError('#profileEmail', 'Email має містити щонайменше 6 символів');
-      isValid = false;
-    } else if ((email.match(/@/g) || []).length > 1) {
-      showError('#profileEmail', 'Email не може містити більше одного символу @');
-      isValid = false;
-    } else if (/\.ru$/i.test(email)) {
-      showError('#profileEmail', 'Email з доменом .ru не дозволено');
-      isValid = false;
-    } else if (tempEmailDomains.some(domain => email.toLowerCase().endsWith(domain))) {
-      showError('#profileEmail', 'Використання тимчасових email-адрес заборонено');
-      isValid = false;
-    }
-
-    // Phone validation
-    const phone = $('#profilePhone').val().trim();
-    const phoneRegex = /^\+380\d{9}$/;
-    
-    if (!phone) {
-      showError('#profilePhone', 'Введіть номер телефону');
-      isValid = false;
-    } else if (!phoneRegex.test(phone)) {
-      showError('#profilePhone', 'Введіть номер у форматі +380XXXXXXXXX');
-      isValid = false;
-    }
-
-    // Address validation
-    const address = $('#profileAddress').val().trim();
-    const addressWithoutSpaces = address.replace(/\s+/g, '');
-    const validAddressChars = /^[а-яА-ЯҐґЄєІіЇї0-9\s.,-]+$/;
-    const hasNumber = /\d/;
-    const hasMultipleCommas = /,\s*,/;
-    
-    if (!address) {
-      showError('#profileAddress', 'Введіть адресу доставки');
-      isValid = false;
-    } else if (addressWithoutSpaces.length === 0) {
-      showError('#profileAddress', 'Введіть адресу доставки, це поле не може бути порожнім');
-      isValid = false;
-    } else if (address.length < 10) {
-      showError('#profileAddress', 'Адреса має містити щонайменше 10 символів');
-      isValid = false;
-    } else if (address.length > 150) {
-      showError('#profileAddress', 'Адреса не може бути довшою за 150 символів');
-      isValid = false;
-    } else if (!validAddressChars.test(address)) {
-      showError('#profileAddress', 'Адреса містить недопустимі символи');
-      isValid = false;
-    } else if (!hasNumber.test(address)) {
-      showError('#profileAddress', 'Вкажіть номер будинку або квартири');
-      isValid = false;
-    } else if (hasMultipleCommas.test(address)) {
-      showError('#profileAddress', 'Адреса не може містити зайвих ком або пробілів');
-      isValid = false;
-    }
-
-    // XSS protection
-    if (isValid) {
-      const sanitizedPib = pib.replace(/[<>]/g, '');
-      const sanitizedEmail = email.replace(/[<>]/g, '');
-      const sanitizedPhone = phone.replace(/[<>]/g, '');
-      const sanitizedAddress = address.replace(/[<>]/g, '');
-      
-      if (sanitizedPib !== pib || sanitizedEmail !== email || 
-          sanitizedPhone !== phone || sanitizedAddress !== address) {
-        showError('#profileAddress', 'Форма містить заборонені символи');
-        isValid = false;
+      } catch (error) {
+        console.error('Помилка завантаження профілю:', error);
       }
     }
-
-    return isValid;
   }
 
   // Збереження профілю
   $(document).on('click', '.save-profile-btn', async function(e) {
     e.preventDefault();
     
-    const currentFormData = {
-      id: 1, // Фіксований ID для профілю
+    const profileData = {
       name: $('#profileName').val().trim(),
       email: $('#profileEmail').val().trim(),
       phone: $('#profilePhone').val().trim(),
@@ -971,7 +1157,16 @@ $(document).ready(function () {
     };
     
     if (validateProfileForm()) {
-      await db.saveData('profile', currentFormData);
+      try {
+        const response = await fetch(`${API_URL}/profile`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(profileData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Помилка при збереженні профілю');
+        }
       
       if ($('.save-profile-btn').next('.profile-success').length === 0) {
         $('.save-profile-btn').after('<div class="profile-success" style="color:green;margin-top:10px;">Зміни збережено!</div>');
@@ -979,6 +1174,10 @@ $(document).ready(function () {
         $('.profile-success').text('Зміни збережено!').show();
       }
       setTimeout(function(){ $('.profile-success').fadeOut(400); }, 2000);
+      } catch (error) {
+        console.error('Помилка при збереженні профілю:', error);
+        $('.profile-success').text('Помилка при збереженні. Спробуйте ще раз.').show().css('color', 'red');
+      }
     }
   });
 
@@ -1019,38 +1218,53 @@ $(document).ready(function () {
 
   // ===== Особистий кабінет: показ замовлень =====
   async function renderOrders() {
-    if (window.location.pathname.includes('account.html')) {
-      let orders = await db.getData('orders');
-      let $list = $('.orders-list');
-      $list.empty();
-      if (!orders.length) {
-        $list.html('<div style="color:#888;">У вас ще немає замовлень.</div>');
+    try {
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        $('#orders').html('<p>Будь ласка, <a href="../pages/login.html" style="color:#ff4fa3;text-decoration:underline;">увійдіть в систему</a> для перегляду замовлень</p>');
         return;
       }
-      orders.reverse().forEach((order, idx) => {
-        let itemsHtml = order.items.map(item =>
-          `<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-            <img src="${item.img}" alt="" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">
-            <span>${item.title} <span style='color:#aaa;font-size:13px;'>x${item.qty}</span></span>
-            <span style='margin-left:auto;color:#ff4fa3;font-weight:600;'>${item.price * item.qty} грн</span>
-          </div>`
-        ).join('');
-        $list.append(`
-          <div class="order-item" data-order-idx="${orders.length-1-idx}">
+
+      const orders = await getMyOrders();
+      const $ordersContainer = $('#orders');
+      
+      if (!orders || orders.length === 0) {
+        $ordersContainer.html('<p>У вас поки немає замовлень</p>');
+        return;
+      }
+
+      const ordersHtml = orders.map(order => `
+        <div class="order-item">
             <div class="order-header">
-              <span><i class="fas fa-calendar"></i> ${order.date}</span>
-              <span class="order-status success">Оформлено</span>
-              <span style="font-weight:600;">${order.total} грн</span>
+            <span>Замовлення #${order._id}</span>
+            <span class="order-date">${new Date(order.createdAt).toLocaleDateString('uk-UA')}</span>
+            <span class="order-status ${order.status}">${order.status}</span>
             </div>
             <div class="order-details">
-              <div style="margin-bottom:8px;">${itemsHtml}</div>
-              <div style="font-size:0.98em;color:#888;">${order.name}, ${order.phone}, ${order.email}</div>
-              ${order.comment ? `<div style='margin-top:4px;color:#888;'>${order.comment}</div>` : ''}
-              <button class="cancel-order-btn" data-idx="${orders.length-1-idx}"><i class="fas fa-times-circle"></i> Відмінити замовлення</button>
+            ${order.items.map(item => `
+              <div class="order-product">
+                <img src="${item.product.imageUrl}" alt="${item.product.name}">
+                <span class="product-name">${item.product.name}</span>
+                <span class="product-quantity">${item.quantity} шт.</span>
+                <span class="product-price">${item.price} грн</span>
             </div>
+            `).join('')}
+            <div class="order-total">
+              <span>Загальна сума: ${order.totalAmount} грн</span>
           </div>
-        `);
-      });
+          </div>
+        </div>
+      `).join('');
+
+      $ordersContainer.html(ordersHtml);
+    } catch (error) {
+      console.error('Помилка завантаження замовлень:', error);
+      if (error.message === 'Немає токена, авторизація відхилена') {
+        $('#orders').html('<p>Будь ласка, <a href="../pages/login.html" style="color:#ff4fa3;text-decoration:underline;">увійдіть в систему</a> для перегляду замовлень</p>');
+      } else {
+        $('#orders').html('<p class="error">Помилка завантаження замовлень</p>');
+      }
     }
   }
 
@@ -1060,91 +1274,156 @@ $(document).ready(function () {
     let orders = await db.getData('orders');
     orders.splice(idx, 1);
     await db.saveData('orders', orders);
-    renderOrders();
+  renderOrders();
     Swal && Swal.fire ? Swal.fire('Замовлення скасовано!', '', 'success') : alert('Замовлення скасовано!');
   });
 
   // ===== Улюблене =====
-  async function getFavorites() {
-    return await db.getData('favorites');
-  }
-
-  async function setFavorites(favs) {
-    await db.clearStore('favorites');
-    await db.saveData('favorites', favs);
-  }
-
-  // Додаємо/видаляємо з улюбленого
-  $(document).on('click', '.favorite-btn', async function(e) {
-    e.preventDefault();
-    const $item = $(this).closest('.catalog-item');
-    const title = $item.find('h3').text();
-    const price = parseInt($item.find('.price').text());
-    const img = $item.find('img').attr('src');
-    const favs = await getFavorites();
-    const idx = favs.findIndex(f => f.title === title);
-    if (idx > -1) {
-      favs.splice(idx, 1);
-      $(this).removeClass('active');
-    } else {
-      favs.push({ title, price, img });
-      $(this).addClass('active');
-    }
-    await setFavorites(favs);
-    renderFavorites();
-  });
-
-  // Підсвічування сердечка для улюбленого
-  async function updateFavoriteBtns() {
-    const favs = await getFavorites();
-    $('.catalog-item').each(function() {
-      const title = $(this).find('h3').text();
-      if (favs.find(f => f.title === title)) {
-        $(this).find('.favorite-btn').addClass('active');
-      } else {
-        $(this).find('.favorite-btn').removeClass('active');
+  // Оновлення кнопок улюблених
+  function updateFavoriteButtons() {
+    const token = localStorage.getItem('token');
+    
+    $('.favorite-btn').each(function() {
+      const $btn = $(this);
+      const productId = $btn.closest('.catalog-item').data('id');
+      
+      if (!token) {
+        $btn.removeClass('active');
+        $btn.attr('title', 'Увійдіть, щоб додати в улюблене');
+        return;
       }
+      
+      
+      const isFavorite = favorites.some(f => f.product._id === productId);
+      $btn.toggleClass('active', isFavorite);
+      $btn.attr('title', isFavorite ? 'Видалити з улюблених' : 'Додати в улюблене');
     });
   }
 
-  // Відображення улюбленого у кабінеті
-  async function renderFavorites() {
-    if (window.location.pathname.includes('account.html')) {
-      const favs = await getFavorites();
-      const $grid = $('.favorites-grid');
-      $grid.empty();
-      if (!favs.length) {
-        $grid.html('<div style="color:#888;">У вас ще немає улюблених товарів.</div>');
-        return;
-      }
-      favs.forEach((item, i) => {
-        $grid.append(`
-          <div class="favorite-item">
-            <div class="favorite-item-inner">
-              <img src="${item.img}" alt="${item.title}" style="width:80px;height:80px;object-fit:cover;border-radius:12px;">
-              <div style="font-weight:600;margin:8px 0 4px 0;">${item.title}</div>
-              <div style="color:#ff4fa3;font-weight:600;">${item.price} грн</div>
-            </div>
-            <button class="remove-favorite-btn" data-idx="${i}" title="Видалити"><i class="fas fa-trash"></i></button>
-          </div>
-        `);
+  // Функція для показу повідомлень
+  async function showNotification(message, type = 'success') {
+    const initialized = await initializeSweetAlert();
+    
+    if (initialized && sweetAlertLoaded) {
+      return Swal.fire({
+        text: message,
+        icon: type,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: type === 'success' ? '#4caf50' : '#f44336',
+        color: '#ffffff'
       });
+    } else {
+      // Fallback to browser's native alert
+      if (type === 'error') {
+        console.error(message);
+      }
+      alert(message);
     }
   }
 
-  // Видалення з улюбленого у кабінеті
-  $(document).on('click', '.remove-favorite-btn', async function() {
-    const idx = $(this).data('idx');
-    const favs = await getFavorites();
-    favs.splice(idx, 1);
-    await setFavorites(favs);
-    renderFavorites();
-    updateFavoriteBtns();
+  // Функція для показу модальних вікон
+  async function showModal(options) {
+    const initialized = await initializeSweetAlert();
+    
+    if (initialized && sweetAlertLoaded) {
+      return Swal.fire(options);
+      } else {
+      // Fallback to browser's native dialogs
+      if (options.text) {
+        if (options.showCancelButton) {
+          return Promise.resolve({ isConfirmed: confirm(options.text) });
+        } else {
+          alert(options.text);
+          return Promise.resolve({ isConfirmed: true });
+        }
+      }
+    }
+  }
+
+  // Додавання/видалення з улюблених
+  async function handleToggleFavorite(productId) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showModal({
+          title: 'Потрібна авторизація',
+          text: 'Для додавання товарів в улюблене, будь ласка, увійдіть в систему',
+          icon: 'info',
+          showCancelButton: true,
+          confirmButtonText: 'Увійти',
+          cancelButtonText: 'Скасувати',
+          confirmButtonColor: '#ff4fa3'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = 'login.html';
+          }
+        });
+        return;
+      }
+
+      const isFavorite = favorites.some(f => f.product._id === productId);
+      
+      if (isFavorite) {
+        await removeFromFavorites(productId);
+        favorites = favorites.filter(f => f.product._id !== productId);
+        showNotification('Товар видалено з улюблених');
+      } else {
+        const favorite = await addToFavorites(productId);
+        favorites.push(favorite);
+        showNotification('Товар додано до улюблених');
+      }
+      
+      updateFavoriteButtons();
+    } catch (error) {
+      console.error('Помилка оновлення улюблених:', error);
+      showNotification('Помилка оновлення улюблених', 'error');
+    }
+  }
+
+  // Кошик
+  $(document).on('click', '.add-to-cart', function() {
+    const productId = $(this).closest('.catalog-item').data('id');
+    handleAddToCart(productId);
+  });
+
+  $(document).on('click', '.quantity-btn.plus', function() {
+    const $item = $(this).closest('.cart-item');
+    const productId = $item.data('id');
+    const currentQuantity = parseInt($item.find('.quantity').text());
+    handleUpdateQuantity(productId, currentQuantity + 1);
+  });
+
+  $(document).on('click', '.quantity-btn.minus', function() {
+    const $item = $(this).closest('.cart-item');
+    const productId = $item.data('id');
+    const currentQuantity = parseInt($item.find('.quantity').text());
+    handleUpdateQuantity(productId, currentQuantity - 1);
+  });
+
+  $(document).on('click', '.remove-item', function() {
+    const productId = $(this).closest('.cart-item').data('id');
+    handleRemoveFromCart(productId);
+  });
+
+  $('#clearCart').on('click', handleClearCart);
+
+  // Улюблені
+  $(document).on('click', '.favorite-btn', function() {
+    const productId = $(this).closest('.catalog-item').data('id');
+    handleToggleFavorite(productId);
   });
 
   // Ініціалізація при завантаженні
   updateCartCount();
-  updateFavoriteBtns();
-  renderFavorites();
+  updateFavoriteButtons();
   renderOrders();
+
+  // Викликаємо ініціалізацію фільтрів після завантаження сторінки
+  if ($('.filter-box').length) {
+    initializeFilters();
+  }
 });

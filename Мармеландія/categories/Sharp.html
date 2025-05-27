@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/catalog.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../js/db.js"></script>
-    <script src="../js/script.js" defer></script>
-        <script src="../js/auth.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="../js/script.js" type="module"></script>
+    <script src="../js/auth.js" type="module"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="gummybears-bg"></div>
@@ -69,7 +68,7 @@
             <div class="filter-dropdown">
                 <div class="filter-group">
                     <h4>Ціна</h4>
-                    <input type="range" id="price-range" min="0" max="1000" step="10">
+                    <input type="range" id="price-range" min="0" max="1000" step="10" value="1000">
                     <span id="price-value">0-1000 грн</span>
                 </div>
             </div>
@@ -78,14 +77,7 @@
         </section>
         <section class="catalog-list">
             <div class="catalog-items" id="category-items">
-                <div class="catalog-item" data-category="Licorice" data-price="100">
-                    <button class="favorite-btn" title="Додати в улюблене"><i class="fas fa-heart"></i></button>
-                    <img src="../image/343300629.jpeg" alt="Hot pepper from the Lord of Darkness">
-                    <h3>Гострий перчик від Володаря Пітьми</h3>
-                    <p class="price">140 грн</p>
-                    <p class="description">Гострий перчик від Володаря Пітьми — це фруктовий мармелад із вогником, який точно змусить тебе здивуватись.</p>
-                    <button class="add-to-cart">В кошик</button>
-                </div>
+
             </div>
         </section>
     </main>
